@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createThread,
   fetchBoards,
@@ -30,6 +30,10 @@ describe("resolveApiBaseUrl", () => {
 });
 
 describe("forum API client", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("fetches boards with browser credentials", async () => {
     const fetcher = vi.fn().mockResolvedValue(
       jsonResponse({
@@ -169,6 +173,50 @@ describe("forum API client", () => {
       body: JSON.stringify({
         email: "alice@example.test",
         username: "alice",
+        password: "password123"
+      })
+    });
+  });
+
+  it("uses a bound global fetch when no custom fetcher is supplied", async () => {
+    const fetcher = vi.fn(function (this: unknown, _input: string, _init?: RequestInit) {
+      if (this !== globalThis) {
+        throw new TypeError("Illegal invocation");
+      }
+
+      return Promise.resolve(
+        jsonResponse({
+          user: {
+            id: "user_1",
+            email: "bound@example.test",
+            username: "bound",
+            role: "user",
+            status: "active",
+            createdAt: "2026-06-03T00:00:00.000Z"
+          }
+        })
+      );
+    });
+
+    vi.stubGlobal("fetch", fetcher);
+
+    await expect(
+      registerUser({
+        email: "bound@example.test",
+        username: "bound",
+        password: "password123"
+      })
+    ).resolves.toMatchObject({
+      username: "bound"
+    });
+
+    expect(fetcher).toHaveBeenCalledWith("http://localhost:4000/api/auth/register", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        email: "bound@example.test",
+        username: "bound",
         password: "password123"
       })
     });

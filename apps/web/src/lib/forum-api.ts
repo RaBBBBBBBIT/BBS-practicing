@@ -12,6 +12,7 @@ import type {
 const DEFAULT_API_BASE_URL = "http://localhost:4000/api";
 
 type ForumFetch = (input: string, init?: RequestInit) => Promise<Response>;
+const defaultFetch: ForumFetch = (input, init) => globalThis.fetch(input, init);
 
 interface BoardsResponse {
   boards: BoardSummary[];
@@ -37,14 +38,14 @@ export function resolveApiBaseUrl(value = process.env.NEXT_PUBLIC_API_BASE_URL ?
   return value.replace(/\/+$/, "");
 }
 
-export async function fetchBoards(fetcher: ForumFetch = fetch, baseUrl?: string): Promise<BoardSummary[]> {
+export async function fetchBoards(fetcher: ForumFetch = defaultFetch, baseUrl?: string): Promise<BoardSummary[]> {
   const response = await requestJson<BoardsResponse>("/boards", { fetcher, baseUrl });
   return response.boards;
 }
 
 export async function fetchThreads(
   options: FetchThreadsOptions = {},
-  fetcher: ForumFetch = fetch,
+  fetcher: ForumFetch = defaultFetch,
   baseUrl?: string
 ): Promise<ThreadSummary[]> {
   const query = options.boardSlug ? `?boardSlug=${encodeURIComponent(options.boardSlug)}` : "";
@@ -52,12 +53,12 @@ export async function fetchThreads(
   return response.threads;
 }
 
-export async function fetchThread(id: string, fetcher: ForumFetch = fetch, baseUrl?: string): Promise<ThreadDetail> {
+export async function fetchThread(id: string, fetcher: ForumFetch = defaultFetch, baseUrl?: string): Promise<ThreadDetail> {
   const response = await requestJson<ThreadDetailResponse>(`/threads/${encodeURIComponent(id)}`, { fetcher, baseUrl });
   return response.thread;
 }
 
-export async function getCurrentUser(fetcher: ForumFetch = fetch, baseUrl?: string): Promise<PublicUser | null> {
+export async function getCurrentUser(fetcher: ForumFetch = defaultFetch, baseUrl?: string): Promise<PublicUser | null> {
   const response = await fetcher(`${resolveApiBaseUrl(baseUrl)}/auth/me`, {
     credentials: "include"
   });
@@ -73,7 +74,7 @@ export async function getCurrentUser(fetcher: ForumFetch = fetch, baseUrl?: stri
 
 export async function registerUser(
   input: RegisterInput,
-  fetcher: ForumFetch = fetch,
+  fetcher: ForumFetch = defaultFetch,
   baseUrl?: string
 ): Promise<PublicUser> {
   const response = await requestJson<AuthSessionResponse>("/auth/register", {
@@ -85,7 +86,7 @@ export async function registerUser(
   return response.user;
 }
 
-export async function loginUser(input: LoginInput, fetcher: ForumFetch = fetch, baseUrl?: string): Promise<PublicUser> {
+export async function loginUser(input: LoginInput, fetcher: ForumFetch = defaultFetch, baseUrl?: string): Promise<PublicUser> {
   const response = await requestJson<AuthSessionResponse>("/auth/login", {
     fetcher,
     baseUrl,
@@ -95,7 +96,7 @@ export async function loginUser(input: LoginInput, fetcher: ForumFetch = fetch, 
   return response.user;
 }
 
-export async function logoutUser(fetcher: ForumFetch = fetch, baseUrl?: string): Promise<void> {
+export async function logoutUser(fetcher: ForumFetch = defaultFetch, baseUrl?: string): Promise<void> {
   const response = await fetcher(`${resolveApiBaseUrl(baseUrl)}/auth/logout`, {
     method: "POST",
     credentials: "include"
@@ -106,7 +107,7 @@ export async function logoutUser(fetcher: ForumFetch = fetch, baseUrl?: string):
 
 export async function createThread(
   input: CreateThreadInput,
-  fetcher: ForumFetch = fetch,
+  fetcher: ForumFetch = defaultFetch,
   baseUrl?: string
 ): Promise<ThreadSummary> {
   const response = await requestJson<ThreadResponse>("/threads", {
