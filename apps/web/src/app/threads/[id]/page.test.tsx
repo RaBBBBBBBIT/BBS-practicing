@@ -47,4 +47,12 @@ describe("ThreadDetailPage", () => {
 
     expect(html).toContain("主题暂时不可用");
   });
+
+  it("renders a missing thread state for 404 responses", async () => {
+    vi.mocked(fetchThread).mockRejectedValue(new Error("API request failed with status 404"));
+
+    const html = renderToStaticMarkup(await ThreadDetailPage({ params: Promise.resolve({ id: "missing" }) }));
+
+    expect(html).toContain("主题不存在");
+  });
 });
