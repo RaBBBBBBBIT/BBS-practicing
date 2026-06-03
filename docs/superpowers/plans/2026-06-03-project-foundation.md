@@ -162,7 +162,7 @@ new file mode 100644
 +{
 +  "compilerOptions": {
 +    "target": "ES2022",
-+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
++    "lib": ["ES2022"],
 +    "module": "ESNext",
 +    "moduleResolution": "Bundler",
 +    "strict": true,
@@ -297,6 +297,7 @@ new file mode 100644
 +{
 +  "extends": "./base.json",
 +  "compilerOptions": {
++    "lib": ["ES2022", "DOM", "DOM.Iterable"],
 +    "allowJs": false,
 +    "jsx": "preserve",
 +    "noEmit": true,
@@ -624,6 +625,7 @@ new file mode 100644
 +{
 +  "extends": "../tsconfig/base.json",
 +  "compilerOptions": {
++    "lib": ["ES2022", "DOM", "DOM.Iterable"],
 +    "jsx": "react-jsx",
 +    "outDir": "dist"
 +  },
