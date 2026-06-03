@@ -6,8 +6,8 @@ export interface HomePageCopy {
 
 export function getHomePageCopy(): HomePageCopy {
   return {
-    title: "技术讨论与社区分享",
-    subtitle: "面向开发者的主题讨论、经验沉淀和社区互动空间",
-    badge: "User Frontend"
+    title: "开发者技术社区",
+    subtitle: "浏览分区主题，登录后发布问题、经验和实践记录。",
+    badge: "BBS Community"
   };
 }
