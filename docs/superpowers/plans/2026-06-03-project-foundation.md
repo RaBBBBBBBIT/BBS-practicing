@@ -246,7 +246,7 @@ Run:
 
 ```bash
 git add .gitignore .env.example package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.base.json
-git commit -m "chore: set up monorepo workspace"
+git commit -m "维护：搭建 monorepo 工作区"
 ```
 
 Expected: git creates a commit containing only root workspace tooling.
@@ -402,7 +402,7 @@ Run:
 
 ```bash
 git add eslint.config.mjs packages/tsconfig packages/eslint-config
-git commit -m "chore: add shared config packages"
+git commit -m "维护：新增共享配置包"
 ```
 
 Expected: git creates a commit containing shared config package files.
@@ -558,7 +558,7 @@ Run:
 
 ```bash
 git add packages/shared
-git commit -m "feat: add shared domain package"
+git commit -m "功能：新增共享领域类型包"
 ```
 
 Expected: git creates a commit containing the shared package.
@@ -710,7 +710,7 @@ Run:
 
 ```bash
 git add package.json pnpm-lock.yaml packages/ui
-git commit -m "feat: add shared ui package"
+git commit -m "功能：新增共享 UI 组件包"
 ```
 
 Expected: git creates a commit containing the UI package and dependency updates.
@@ -934,7 +934,7 @@ Run:
 
 ```bash
 git add apps/api package.json pnpm-lock.yaml
-git commit -m "feat: add api health foundation"
+git commit -m "功能：新增 API 健康检查基础"
 ```
 
 Expected: git creates a commit containing the API foundation and dependency updates.
@@ -1153,7 +1153,7 @@ Run:
 
 ```bash
 git add apps/web package.json pnpm-lock.yaml
-git commit -m "feat: add web app foundation"
+git commit -m "功能：新增用户前台基础"
 ```
 
 Expected: git creates a commit containing the user frontend.
@@ -1373,7 +1373,7 @@ Run:
 
 ```bash
 git add apps/admin package.json pnpm-lock.yaml
-git commit -m "feat: add admin app foundation"
+git commit -m "功能：新增管理后台基础"
 ```
 
 Expected: git creates a commit containing the admin frontend.
@@ -1480,7 +1480,7 @@ Run:
 
 ```bash
 git add docker-compose.yml
-git commit -m "chore: add local infrastructure compose"
+git commit -m "维护：新增本地基础设施编排"
 ```
 
 Expected: git creates a commit containing the Compose file.
@@ -1564,7 +1564,7 @@ Run:
 
 ```bash
 git add README.md
-git commit -m "docs: add local development guide"
+git commit -m "文档：新增本地开发说明"
 ```
 
 Expected: git creates a commit containing the README update.
@@ -1699,5 +1699,5 @@ Expected: generated folders such as `.next`, `dist`, `coverage`, and `.turbo` ar
 
 ```bash
 git add pnpm-lock.yaml
-git commit -m "chore: refresh workspace lockfile"
+git commit -m "维护：刷新工作区锁定文件"
 ```
