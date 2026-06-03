@@ -67,7 +67,7 @@ Create or modify these files:
 - Modify: `packages/shared/src/index.test.ts`
 - Modify: `packages/shared/src/index.ts`
 
-- [ ] **Step 1: Install shared schema dependency**
+- [x] **Step 1: Install shared schema dependency**
 
 Run:
 
@@ -77,7 +77,7 @@ pnpm add --filter @bbs/shared zod
 
 Expected: `packages/shared/package.json` has `zod` in `dependencies`, and `pnpm-lock.yaml` is updated.
 
-- [ ] **Step 2: Write failing shared DTO tests**
+- [x] **Step 2: Write failing shared DTO tests**
 
 Replace `packages/shared/src/index.test.ts` with:
 
@@ -170,7 +170,7 @@ describe("thread schemas", () => {
 });
 ```
 
-- [ ] **Step 3: Run shared tests and verify they fail**
+- [x] **Step 3: Run shared tests and verify they fail**
 
 Run:
 
@@ -180,7 +180,7 @@ pnpm --filter @bbs/shared test
 
 Expected: FAIL because `BoardStatus`, `registerSchema`, `loginSchema`, and `createThreadSchema` are not exported.
 
-- [ ] **Step 4: Implement shared DTOs and schemas**
+- [x] **Step 4: Implement shared DTOs and schemas**
 
 Replace `packages/shared/src/index.ts` with:
 
@@ -288,7 +288,7 @@ export interface ThreadSummary {
 }
 ```
 
-- [ ] **Step 5: Run shared tests and build**
+- [x] **Step 5: Run shared tests and build**
 
 Run:
 
@@ -299,7 +299,7 @@ pnpm --filter @bbs/shared build
 
 Expected: tests pass and `packages/shared/dist/index.d.ts` includes the new exported DTOs.
 
-- [ ] **Step 6: Commit shared DTO contracts**
+- [x] **Step 6: Commit shared DTO contracts**
 
 Run:
 
@@ -321,7 +321,7 @@ Expected: commit contains shared DTO schema work only.
 - Create: `apps/api/src/prisma/prisma.service.ts`
 - Modify: `apps/api/src/app.module.ts`
 
-- [ ] **Step 1: Install Prisma dependencies**
+- [x] **Step 1: Install Prisma dependencies**
 
 Run:
 
@@ -332,7 +332,7 @@ pnpm add -D --filter api prisma
 
 Expected: `apps/api/package.json` and `pnpm-lock.yaml` are updated.
 
-- [ ] **Step 2: Create Prisma schema and seed**
+- [x] **Step 2: Create Prisma schema and seed**
 
 Create `apps/api/prisma/schema.prisma`:
 
@@ -478,7 +478,7 @@ main()
   });
 ```
 
-- [ ] **Step 3: Update API package scripts**
+- [x] **Step 3: Update API package scripts**
 
 Update `apps/api/package.json` scripts to include:
 
@@ -500,7 +500,7 @@ Also add:
 }
 ```
 
-- [ ] **Step 4: Update environment example**
+- [x] **Step 4: Update environment example**
 
 Ensure `.env.example` contains:
 
@@ -510,7 +510,7 @@ SESSION_COOKIE_NAME=bbs_session
 SESSION_SECRET=change_me_to_a_long_random_secret
 ```
 
-- [ ] **Step 5: Add Prisma service**
+- [x] **Step 5: Add Prisma service**
 
 Create `apps/api/src/prisma/prisma.service.ts`:
 
@@ -557,7 +557,7 @@ import { PrismaModule } from "./prisma/prisma.module.js";
 export class AppModule {}
 ```
 
-- [ ] **Step 6: Generate Prisma client and verify schema**
+- [x] **Step 6: Generate Prisma client and verify schema**
 
 Run:
 
@@ -568,7 +568,7 @@ pnpm --filter api typecheck
 
 Expected: Prisma client generation succeeds and API typecheck passes.
 
-- [ ] **Step 7: Commit Prisma foundation**
+- [x] **Step 7: Commit Prisma foundation**
 
 Run:
 
@@ -593,7 +593,7 @@ Expected: commit contains Prisma schema, seed, service, and dependency changes.
 - Modify: `apps/api/src/main.ts`
 - Modify: `apps/api/package.json`
 
-- [ ] **Step 1: Install auth dependencies**
+- [x] **Step 1: Install auth dependencies**
 
 Run:
 
@@ -604,7 +604,7 @@ pnpm add -D --filter api @types/cookie-parser
 
 Expected: API package and lockfile include bcryptjs and cookie-parser.
 
-- [ ] **Step 2: Write failing auth e2e tests**
+- [x] **Step 2: Write failing auth e2e tests**
 
 Create `apps/api/test/auth.e2e-spec.ts`:
 
@@ -695,7 +695,7 @@ describe("auth API", () => {
 });
 ```
 
-- [ ] **Step 3: Run auth tests and verify they fail for missing module**
+- [x] **Step 3: Run auth tests and verify they fail for missing module**
 
 Run:
 
@@ -705,7 +705,7 @@ pnpm --filter api test -- auth.e2e-spec.ts
 
 Expected: FAIL because `/api/auth/register` is not implemented.
 
-- [ ] **Step 4: Implement validation pipe and auth module**
+- [x] **Step 4: Implement validation pipe and auth module**
 
 Implement `apps/api/src/validation/zod-validation.pipe.ts`, auth service, controller, guard, and decorator using shared schemas, bcryptjs hashing, random session tokens, SHA-256 token hashes, and HttpOnly cookie `bbs_session`.
 
@@ -716,7 +716,7 @@ Required endpoint behavior:
 - `GET /api/auth/me` returns `{ user }` for valid cookie, otherwise 401.
 - `POST /api/auth/logout` deletes the current session if present, clears cookie, returns 204.
 
-- [ ] **Step 5: Run auth tests**
+- [x] **Step 5: Run auth tests**
 
 Run:
 
@@ -727,7 +727,7 @@ pnpm --filter api typecheck
 
 Expected: auth e2e tests and API typecheck pass.
 
-- [ ] **Step 6: Commit auth API**
+- [x] **Step 6: Commit auth API**
 
 Run:
 
@@ -751,7 +751,7 @@ Expected: commit contains auth module and tests.
 - Create: `apps/api/test/threads.e2e-spec.ts`
 - Modify: `apps/api/src/app.module.ts`
 
-- [ ] **Step 1: Write failing boards and threads tests**
+- [x] **Step 1: Write failing boards and threads tests**
 
 Create e2e tests that verify:
 
@@ -760,7 +760,7 @@ Create e2e tests that verify:
 - `POST /api/threads` requires authentication.
 - Authenticated user can create a thread in an open board.
 
-- [ ] **Step 2: Run tests and verify they fail**
+- [x] **Step 2: Run tests and verify they fail**
 
 Run:
 
@@ -770,14 +770,14 @@ pnpm --filter api test -- boards.e2e-spec.ts threads.e2e-spec.ts
 
 Expected: FAIL because boards and threads modules are missing.
 
-- [ ] **Step 3: Implement boards module**
+- [x] **Step 3: Implement boards module**
 
 Implement:
 
 - `BoardsService.listBoards()` returns board summaries sorted by name.
 - `BoardsController.getBoards()` exposes `GET /api/boards`.
 
-- [ ] **Step 4: Implement threads module**
+- [x] **Step 4: Implement threads module**
 
 Implement:
 
@@ -786,7 +786,7 @@ Implement:
 - `ThreadsController.getThreads()` exposes `GET /api/threads`.
 - `ThreadsController.createThread()` exposes authenticated `POST /api/threads`.
 
-- [ ] **Step 5: Run boards and threads tests**
+- [x] **Step 5: Run boards and threads tests**
 
 Run:
 
@@ -797,7 +797,7 @@ pnpm --filter api typecheck
 
 Expected: tests and typecheck pass.
 
-- [ ] **Step 6: Commit boards and threads API**
+- [x] **Step 6: Commit boards and threads API**
 
 Run:
 
@@ -813,7 +813,7 @@ Expected: commit contains boards and threads modules and tests.
 **Files:**
 - Modify: `README.md`
 
-- [ ] **Step 1: Update README**
+- [x] **Step 1: Update README**
 
 Add sections for:
 
@@ -822,7 +822,7 @@ Add sections for:
 - Auth endpoints.
 - Board and thread endpoints.
 
-- [ ] **Step 2: Run full verification**
+- [x] **Step 2: Run full verification**
 
 Run:
 
@@ -838,7 +838,7 @@ docker compose config
 
 Expected: all commands pass.
 
-- [ ] **Step 3: Run runtime verification**
+- [x] **Step 3: Run runtime verification**
 
 Run:
 
@@ -859,7 +859,7 @@ curl http://localhost:4000/api/threads
 
 Expected: health returns `status: ok`, boards returns seeded boards, threads returns an array.
 
-- [ ] **Step 4: Stop services and commit docs**
+- [x] **Step 4: Stop services and commit docs**
 
 Run:
 
