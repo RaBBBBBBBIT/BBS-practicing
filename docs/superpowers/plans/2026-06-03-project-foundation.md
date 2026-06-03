@@ -458,6 +458,7 @@ new file mode 100644
 +{
 +  "extends": "../tsconfig/base.json",
 +  "compilerOptions": {
++    "ignoreDeprecations": "6.0",
 +    "outDir": "dist"
 +  },
 +  "include": ["src/**/*.ts"]
@@ -629,6 +630,7 @@ new file mode 100644
 +  "extends": "../tsconfig/base.json",
 +  "compilerOptions": {
 +    "lib": ["ES2022", "DOM", "DOM.Iterable"],
++    "ignoreDeprecations": "6.0",
 +    "jsx": "react-jsx",
 +    "outDir": "dist"
 +  },
