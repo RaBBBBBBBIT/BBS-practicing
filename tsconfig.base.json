@@ -11,10 +11,9 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "baseUrl": ".",
     "paths": {
-      "@bbs/shared": ["packages/shared/src/index.ts"],
-      "@bbs/ui": ["packages/ui/src/index.tsx"]
+      "@bbs/shared": ["./packages/shared/src/index.ts"],
+      "@bbs/ui": ["./packages/ui/src/index.tsx"]
     }
   }
 }

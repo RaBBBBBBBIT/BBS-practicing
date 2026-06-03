@@ -172,10 +172,9 @@ new file mode 100644
 +    "forceConsistentCasingInFileNames": true,
 +    "skipLibCheck": true,
 +    "resolveJsonModule": true,
-+    "baseUrl": ".",
 +    "paths": {
-+      "@bbs/shared": ["packages/shared/src/index.ts"],
-+      "@bbs/ui": ["packages/ui/src/index.tsx"]
++      "@bbs/shared": ["./packages/shared/src/index.ts"],
++      "@bbs/ui": ["./packages/ui/src/index.tsx"]
 +    }
 +  }
 +}
@@ -319,8 +318,6 @@ new file mode 100644
 +  "compilerOptions": {
 +    "module": "NodeNext",
 +    "moduleResolution": "NodeNext",
-+    "outDir": "dist",
-+    "rootDir": "src",
 +    "declaration": true,
 +    "sourceMap": true,
 +    "experimentalDecorators": true,
@@ -782,7 +779,8 @@ new file mode 100644
 +{
 +  "extends": "./tsconfig.json",
 +  "compilerOptions": {
-+    "rootDir": "src"
++    "rootDir": "src",
++    "outDir": "dist"
 +  },
 +  "include": ["src/**/*.ts"],
 +  "exclude": ["test/**/*.ts", "**/*.test.ts", "**/*.spec.ts"]
@@ -993,9 +991,6 @@ new file mode 100644
 @@
 +{
 +  "extends": "../../packages/tsconfig/next.json",
-+  "compilerOptions": {
-+    "baseUrl": "."
-+  },
 +  "include": ["next-env.d.ts", "src/**/*.ts", "src/**/*.tsx", ".next/types/**/*.ts"],
 +  "exclude": ["node_modules"]
 +}
@@ -1212,9 +1207,6 @@ new file mode 100644
 @@
 +{
 +  "extends": "../../packages/tsconfig/next.json",
-+  "compilerOptions": {
-+    "baseUrl": "."
-+  },
 +  "include": ["next-env.d.ts", "src/**/*.ts", "src/**/*.tsx", ".next/types/**/*.ts"],
 +  "exclude": ["node_modules"]
 +}
