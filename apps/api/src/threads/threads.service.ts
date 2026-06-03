@@ -1,11 +1,11 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { BoardStatus as PrismaBoardStatus, ThreadStatus as PrismaThreadStatus } from "@prisma/client";
 import { ThreadStatus, type CreateThreadInput, type PublicUser, type ThreadSummary } from "@bbs/shared";
 import { PrismaService } from "../prisma/prisma.service.js";
 
 @Injectable()
 export class ThreadsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
   async createThread(input: CreateThreadInput, author: PublicUser): Promise<ThreadSummary> {
     const board = await this.prisma.board.findUnique({

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Inject, Post, UseGuards } from "@nestjs/common";
 import { createThreadSchema, type CreateThreadInput, type PublicUser, type ThreadSummary } from "@bbs/shared";
 import { CurrentUser } from "../auth/current-user.decorator.js";
 import { SessionGuard } from "../auth/session.guard.js";
@@ -15,7 +15,7 @@ interface ThreadsResponse {
 
 @Controller("threads")
 export class ThreadsController {
-  constructor(private readonly threadsService: ThreadsService) {}
+  constructor(@Inject(ThreadsService) private readonly threadsService: ThreadsService) {}
 
   @Post()
   @UseGuards(SessionGuard)

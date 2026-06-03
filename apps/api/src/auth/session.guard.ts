@@ -1,5 +1,5 @@
 import type { CanActivate, ExecutionContext } from "@nestjs/common";
-import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
 import type { Request } from "express";
 import { AuthService } from "./auth.service.js";
 
@@ -10,7 +10,7 @@ export interface RequestWithUser extends Request {
 
 @Injectable()
 export class SessionGuard implements CanActivate {
-  constructor(private readonly authService: AuthService) {}
+  constructor(@Inject(AuthService) private readonly authService: AuthService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<RequestWithUser>();

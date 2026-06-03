@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Post, Res, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Inject, Post, Res, UseGuards } from "@nestjs/common";
 import type { Response } from "express";
 import { loginSchema, registerSchema, type AuthSessionResponse, type LoginInput, type RegisterInput } from "@bbs/shared";
 import { ZodValidationPipe } from "../validation/zod-validation.pipe.js";
@@ -9,7 +9,7 @@ import type { PublicUser } from "@bbs/shared";
 
 @Controller("auth")
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(@Inject(AuthService) private readonly authService: AuthService) {}
 
   @Post("register")
   async register(

@@ -1,4 +1,4 @@
-import { Controller, Get } from "@nestjs/common";
+import { Controller, Get, Inject } from "@nestjs/common";
 import type { BoardSummary } from "@bbs/shared";
 import { BoardsService } from "./boards.service.js";
 
@@ -8,7 +8,7 @@ interface BoardsResponse {
 
 @Controller("boards")
 export class BoardsController {
-  constructor(private readonly boardsService: BoardsService) {}
+  constructor(@Inject(BoardsService) private readonly boardsService: BoardsService) {}
 
   @Get()
   async listBoards(): Promise<BoardsResponse> {

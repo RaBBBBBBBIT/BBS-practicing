@@ -1,11 +1,11 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import { BoardStatus as PrismaBoardStatus } from "@prisma/client";
 import { BoardStatus, type BoardSummary } from "@bbs/shared";
 import { PrismaService } from "../prisma/prisma.service.js";
 
 @Injectable()
 export class BoardsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
   async listBoards(): Promise<BoardSummary[]> {
     const boards = await this.prisma.board.findMany({

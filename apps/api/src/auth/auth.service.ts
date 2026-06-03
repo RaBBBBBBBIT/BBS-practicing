@@ -1,5 +1,5 @@
 import { randomBytes, createHash } from "node:crypto";
-import { ConflictException, Injectable, UnauthorizedException } from "@nestjs/common";
+import { ConflictException, Inject, Injectable, UnauthorizedException } from "@nestjs/common";
 import { compare, hash } from "bcryptjs";
 import type { User } from "@prisma/client";
 import { UserRole as PrismaUserRole, UserStatus as PrismaUserStatus } from "@prisma/client";
@@ -23,7 +23,7 @@ export interface CreatedSession {
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
   async register(input: RegisterInput): Promise<CreatedSession> {
     const existingUser = await this.prisma.user.findFirst({
