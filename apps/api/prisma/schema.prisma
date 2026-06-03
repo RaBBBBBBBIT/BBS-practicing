@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  username     String     @unique
+  passwordHash String
+  role         UserRole   @default(USER)
+  status       UserStatus @default(ACTIVE)
+  sessions     Session[]
+  threads      Thread[]
+  comments     Comment[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Board {
+  id          String      @id @default(cuid())
+  slug        String      @unique
+  name        String
+  description String
+  status      BoardStatus @default(OPEN)
+  threads     Thread[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Thread {
+  id        String       @id @default(cuid())
+  boardId   String
+  board     Board        @relation(fields: [boardId], references: [id])
+  authorId  String
+  author    User         @relation(fields: [authorId], references: [id])
+  title     String
+  body      String
+  status    ThreadStatus @default(PUBLISHED)
+  tags      String[]     @default([])
+  comments  Comment[]
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  threadId  String
+  thread    Thread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  parentId  String?
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum UserRole {
+  USER
+  MODERATOR
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  MUTED
+  BANNED
+}
+
+enum BoardStatus {
+  OPEN
+  CLOSED
+}
+
+enum ThreadStatus {
+  DRAFT
+  PUBLISHED
+  HIDDEN
+  DELETED
+}

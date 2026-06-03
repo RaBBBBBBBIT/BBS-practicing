@@ -7,7 +7,11 @@
     "dev": "tsx watch src/main.ts",
     "start:dev": "tsx watch src/main.ts",
     "build": "tsc -p tsconfig.build.json",
-    "lint": "eslint --config ../../eslint.config.mjs \"src/**/*.ts\" \"test/**/*.ts\"",
+    "lint": "eslint --config ../../eslint.config.mjs \"src/**/*.ts\" \"test/**/*.ts\" \"prisma/**/*.ts\"",
+    "prisma:generate": "DATABASE_URL=${DATABASE_URL:-postgresql://bbs:bbs_password@localhost:5432/bbs_dev} prisma generate",
+    "prisma:migrate": "DATABASE_URL=${DATABASE_URL:-postgresql://bbs:bbs_password@localhost:5432/bbs_dev} prisma migrate dev",
+    "prisma:seed": "DATABASE_URL=${DATABASE_URL:-postgresql://bbs:bbs_password@localhost:5432/bbs_dev} tsx prisma/seed.ts",
+    "prisma:validate": "DATABASE_URL=${DATABASE_URL:-postgresql://bbs:bbs_password@localhost:5432/bbs_dev} prisma validate",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
@@ -16,12 +20,14 @@
     "@nestjs/common": "^11.1.24",
     "@nestjs/core": "^11.1.24",
     "@nestjs/platform-express": "^11.1.24",
+    "@prisma/client": "^6.19.3",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2"
   },
   "devDependencies": {
     "@nestjs/testing": "^11.1.24",
     "@types/supertest": "^7.2.0",
+    "prisma": "^6.19.3",
     "supertest": "^7.2.2"
   }
 }
