@@ -1,5 +1,6 @@
 import type { INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
+import { ThreadStatus as PrismaThreadStatus } from "@prisma/client";
 import cookieParser from "cookie-parser";
 import request from "supertest";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -59,6 +60,48 @@ describe("boards API", () => {
         name: "Alpha 分区",
         status: "open",
         threadCount: 0
+      })
+    );
+  });
+
+  it("counts published threads only", async () => {
+    await prisma.user.create({
+      data: {
+        id: "user_boards_author",
+        email: "boards-author@example.com",
+        username: "boards-author",
+        passwordHash: "not-used-in-this-test"
+      }
+    });
+    const board = await prisma.board.findUniqueOrThrow({
+      where: { slug: "boards-z-alpha" }
+    });
+    await prisma.thread.createMany({
+      data: [
+        {
+          boardId: board.id,
+          authorId: "user_boards_author",
+          title: "Published board count thread",
+          body: "This published thread should be counted on the public board list.",
+          status: PrismaThreadStatus.PUBLISHED
+        },
+        {
+          boardId: board.id,
+          authorId: "user_boards_author",
+          title: "Hidden board count thread",
+          body: "This hidden thread should not be counted on the public board list.",
+          status: PrismaThreadStatus.HIDDEN
+        }
+      ]
+    });
+
+    const response = await request(app.getHttpServer()).get("/api/boards").expect(200);
+    const alphaBoard = response.body.boards.find((item: { slug: string }) => item.slug === "boards-z-alpha");
+
+    expect(alphaBoard).toEqual(
+      expect.objectContaining({
+        slug: "boards-z-alpha",
+        threadCount: 1
       })
     );
   });

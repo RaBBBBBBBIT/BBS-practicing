@@ -91,6 +91,7 @@ export interface ThreadSummary {
   id: string;
   boardId: string;
   boardSlug: string;
+  boardName: string;
   authorId: string;
   authorUsername: string;
   title: string;
@@ -98,4 +99,9 @@ export interface ThreadSummary {
   status: ThreadStatus;
   tags: string[];
   createdAt: string;
+  updatedAt: string;
+}
+
+export interface ThreadDetail extends Omit<ThreadSummary, "excerpt"> {
+  body: string;
 }

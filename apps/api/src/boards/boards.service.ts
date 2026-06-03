@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { BoardStatus as PrismaBoardStatus } from "@prisma/client";
+import { BoardStatus as PrismaBoardStatus, ThreadStatus as PrismaThreadStatus } from "@prisma/client";
 import { BoardStatus, type BoardSummary } from "@bbs/shared";
 import { PrismaService } from "../prisma/prisma.service.js";
 
@@ -12,7 +12,11 @@ export class BoardsService {
       orderBy: { name: "asc" },
       include: {
         _count: {
-          select: { threads: true }
+          select: {
+            threads: {
+              where: { status: PrismaThreadStatus.PUBLISHED }
+            }
+          }
         }
       }
     });

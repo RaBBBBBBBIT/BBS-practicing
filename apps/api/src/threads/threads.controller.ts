@@ -1,5 +1,11 @@
-import { Body, Controller, Get, Inject, Post, UseGuards } from "@nestjs/common";
-import { createThreadSchema, type CreateThreadInput, type PublicUser, type ThreadSummary } from "@bbs/shared";
+import { Body, Controller, Get, Inject, Param, Post, Query, UseGuards } from "@nestjs/common";
+import {
+  createThreadSchema,
+  type CreateThreadInput,
+  type PublicUser,
+  type ThreadDetail,
+  type ThreadSummary
+} from "@bbs/shared";
 import { CurrentUser } from "../auth/current-user.decorator.js";
 import { SessionGuard } from "../auth/session.guard.js";
 import { ZodValidationPipe } from "../validation/zod-validation.pipe.js";
@@ -11,6 +17,10 @@ interface ThreadResponse {
 
 interface ThreadsResponse {
   threads: ThreadSummary[];
+}
+
+interface ThreadDetailResponse {
+  thread: ThreadDetail;
 }
 
 @Controller("threads")
@@ -29,9 +39,16 @@ export class ThreadsController {
   }
 
   @Get()
-  async listThreads(): Promise<ThreadsResponse> {
+  async listThreads(@Query("boardSlug") boardSlug?: string): Promise<ThreadsResponse> {
     return {
-      threads: await this.threadsService.listThreads()
+      threads: await this.threadsService.listThreads(boardSlug ? { boardSlug } : {})
+    };
+  }
+
+  @Get(":id")
+  async getThread(@Param("id") id: string): Promise<ThreadDetailResponse> {
+    return {
+      thread: await this.threadsService.getPublishedThread(id)
     };
   }
 }

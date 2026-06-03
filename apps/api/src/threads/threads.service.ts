@@ -1,6 +1,6 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { BoardStatus as PrismaBoardStatus, ThreadStatus as PrismaThreadStatus } from "@prisma/client";
-import { ThreadStatus, type CreateThreadInput, type PublicUser, type ThreadSummary } from "@bbs/shared";
+import { ThreadStatus, type CreateThreadInput, type PublicUser, type ThreadDetail, type ThreadSummary } from "@bbs/shared";
 import { PrismaService } from "../prisma/prisma.service.js";
 
 @Injectable()
@@ -37,9 +37,12 @@ export class ThreadsService {
     return this.toThreadSummary(thread);
   }
 
-  async listThreads(): Promise<ThreadSummary[]> {
+  async listThreads(options: { boardSlug?: string } = {}): Promise<ThreadSummary[]> {
     const threads = await this.prisma.thread.findMany({
-      where: { status: PrismaThreadStatus.PUBLISHED },
+      where: {
+        status: PrismaThreadStatus.PUBLISHED,
+        ...(options.boardSlug ? { board: { slug: options.boardSlug } } : {})
+      },
       orderBy: { createdAt: "desc" },
       include: {
         board: true,
@@ -50,10 +53,29 @@ export class ThreadsService {
     return threads.map((thread) => this.toThreadSummary(thread));
   }
 
+  async getPublishedThread(id: string): Promise<ThreadDetail> {
+    const thread = await this.prisma.thread.findFirst({
+      where: {
+        id,
+        status: PrismaThreadStatus.PUBLISHED
+      },
+      include: {
+        board: true,
+        author: true
+      }
+    });
+
+    if (!thread) {
+      throw new NotFoundException("Thread not found");
+    }
+
+    return this.toThreadDetail(thread);
+  }
+
   private toThreadSummary(thread: {
     id: string;
     boardId: string;
-    board: { slug: string };
+    board: { slug: string; name: string };
     authorId: string;
     author: { username: string };
     title: string;
@@ -61,18 +83,50 @@ export class ThreadsService {
     status: PrismaThreadStatus;
     tags: string[];
     createdAt: Date;
+    updatedAt: Date;
   }): ThreadSummary {
     return {
       id: thread.id,
       boardId: thread.boardId,
       boardSlug: thread.board.slug,
+      boardName: thread.board.name,
       authorId: thread.authorId,
       authorUsername: thread.author.username,
       title: thread.title,
       excerpt: this.createExcerpt(thread.body),
       status: this.toPublicStatus(thread.status),
       tags: thread.tags,
-      createdAt: thread.createdAt.toISOString()
+      createdAt: thread.createdAt.toISOString(),
+      updatedAt: thread.updatedAt.toISOString()
+    };
+  }
+
+  private toThreadDetail(thread: {
+    id: string;
+    boardId: string;
+    board: { slug: string; name: string };
+    authorId: string;
+    author: { username: string };
+    title: string;
+    body: string;
+    status: PrismaThreadStatus;
+    tags: string[];
+    createdAt: Date;
+    updatedAt: Date;
+  }): ThreadDetail {
+    return {
+      id: thread.id,
+      boardId: thread.boardId,
+      boardSlug: thread.board.slug,
+      boardName: thread.board.name,
+      authorId: thread.authorId,
+      authorUsername: thread.author.username,
+      title: thread.title,
+      body: thread.body,
+      status: this.toPublicStatus(thread.status),
+      tags: thread.tags,
+      createdAt: thread.createdAt.toISOString(),
+      updatedAt: thread.updatedAt.toISOString()
     };
   }
 

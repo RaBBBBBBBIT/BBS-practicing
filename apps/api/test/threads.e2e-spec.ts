@@ -38,6 +38,14 @@ describe("threads API", () => {
         description: "讨论 NestJS、数据库、API 设计和服务端工程。"
       }
     });
+    await prisma.board.create({
+      data: {
+        id: "board_threads_frontend",
+        slug: "threads-frontend",
+        name: "前端开发",
+        description: "讨论 React、Next.js、CSS 和前端工程化。"
+      }
+    });
   });
 
   afterEach(async () => {
@@ -79,6 +87,7 @@ describe("threads API", () => {
       expect.objectContaining({
         boardId: "board_threads_backend",
         boardSlug: "threads-backend",
+        boardName: "后端开发",
         authorUsername: "carol",
         title: "How do I structure a NestJS module?",
         excerpt: "I want to understand how providers and modules fit together.",
@@ -91,6 +100,7 @@ describe("threads API", () => {
 
     expect(listResponse.body.threads).toHaveLength(1);
     expect(listResponse.body.threads[0].title).toBe("How do I structure a NestJS module?");
+    expect(listResponse.body.threads[0].updatedAt).toEqual(expect.any(String));
   });
 
   it("lists published threads only", async () => {
@@ -130,6 +140,120 @@ describe("threads API", () => {
         status: "published"
       })
     );
+  });
+
+  it("filters published threads by board slug", async () => {
+    await prisma.user.create({
+      data: {
+        id: "user_threads_filter_author",
+        email: "filter-author@example.com",
+        username: "filter-author",
+        passwordHash: "not-used-in-this-test"
+      }
+    });
+    await prisma.thread.createMany({
+      data: [
+        {
+          boardId: "board_threads_backend",
+          authorId: "user_threads_filter_author",
+          title: "Backend module boundaries",
+          body: "This backend thread should appear in the backend board list.",
+          status: PrismaThreadStatus.PUBLISHED
+        },
+        {
+          boardId: "board_threads_frontend",
+          authorId: "user_threads_filter_author",
+          title: "Frontend routing patterns",
+          body: "This frontend thread should not appear in the backend board list.",
+          status: PrismaThreadStatus.PUBLISHED
+        },
+        {
+          boardId: "board_threads_backend",
+          authorId: "user_threads_filter_author",
+          title: "Hidden backend moderation notes",
+          body: "This hidden backend thread should not appear in public lists.",
+          status: PrismaThreadStatus.HIDDEN
+        }
+      ]
+    });
+
+    const response = await request(app.getHttpServer())
+      .get("/api/threads")
+      .query({ boardSlug: "threads-backend" })
+      .expect(200);
+
+    expect(response.body.threads).toHaveLength(1);
+    expect(response.body.threads[0]).toEqual(
+      expect.objectContaining({
+        boardSlug: "threads-backend",
+        boardName: "后端开发",
+        title: "Backend module boundaries",
+        status: "published"
+      })
+    );
+  });
+
+  it("returns published thread details", async () => {
+    await prisma.user.create({
+      data: {
+        id: "user_threads_detail_author",
+        email: "detail-author@example.com",
+        username: "detail-author",
+        passwordHash: "not-used-in-this-test"
+      }
+    });
+    const thread = await prisma.thread.create({
+      data: {
+        id: "thread_detail_published",
+        boardId: "board_threads_backend",
+        authorId: "user_threads_detail_author",
+        title: "Published detail contract",
+        body: "The detail endpoint should include the full body for this published thread.",
+        status: PrismaThreadStatus.PUBLISHED,
+        tags: ["nestjs", "details"]
+      }
+    });
+
+    const response = await request(app.getHttpServer()).get(`/api/threads/${thread.id}`).expect(200);
+
+    expect(response.body.thread).toEqual(
+      expect.objectContaining({
+        id: "thread_detail_published",
+        boardSlug: "threads-backend",
+        boardName: "后端开发",
+        authorUsername: "detail-author",
+        title: "Published detail contract",
+        body: "The detail endpoint should include the full body for this published thread.",
+        status: "published",
+        tags: ["nestjs", "details"],
+        createdAt: expect.any(String),
+        updatedAt: expect.any(String)
+      })
+    );
+  });
+
+  it("does not return non-published thread details", async () => {
+    await prisma.user.create({
+      data: {
+        id: "user_threads_hidden_detail_author",
+        email: "hidden-detail-author@example.com",
+        username: "hidden-detail-author",
+        passwordHash: "not-used-in-this-test"
+      }
+    });
+    await prisma.thread.create({
+      data: {
+        id: "thread_detail_hidden",
+        boardId: "board_threads_backend",
+        authorId: "user_threads_hidden_detail_author",
+        title: "Hidden detail contract",
+        body: "The detail endpoint should not expose this hidden thread.",
+        status: PrismaThreadStatus.HIDDEN
+      }
+    });
+
+    await request(app.getHttpServer()).get("/api/threads/thread_detail_hidden").expect(404);
+    await request(app.getHttpServer()).get("/api/threads/thread_detail_missing").expect(404);
   });
 
   it("rejects creating threads in closed boards", async () => {

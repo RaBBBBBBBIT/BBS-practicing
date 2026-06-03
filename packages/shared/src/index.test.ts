@@ -9,6 +9,7 @@ import {
   UserRole,
   UserStatus
 } from "./index";
+import type { ThreadDetail } from "./index";
 
 describe("shared domain constants", () => {
   it("exposes stable role and status values", () => {
@@ -118,5 +119,25 @@ describe("thread schemas", () => {
         tags: ["one", "two", "three", "four", "five", "six"]
       })
     ).toThrow();
+  });
+
+  it("defines the public thread detail contract", () => {
+    const detail: ThreadDetail = {
+      id: "thread_123",
+      boardId: "board_123",
+      boardSlug: "backend",
+      boardName: "后端开发",
+      authorId: "user_123",
+      authorUsername: "alice",
+      title: "How do I debug NestJS providers?",
+      body: "I am trying to understand dependency injection.",
+      status: ThreadStatus.Published,
+      tags: ["nestjs", "debugging"],
+      createdAt: "2026-06-03T00:00:00.000Z",
+      updatedAt: "2026-06-03T00:00:00.000Z"
+    };
+
+    expect(detail.boardName).toBe("后端开发");
+    expect(detail.body).toContain("dependency injection");
   });
 });
