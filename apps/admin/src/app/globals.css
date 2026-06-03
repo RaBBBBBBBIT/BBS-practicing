@@ -1,0 +1,21 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, "Helvetica Neue", sans-serif;
+  color: #1f2328;
+  background: #ffffff;
+}
+
+main {
+  min-height: 100vh;
+  padding: 40px 24px;
+  background: #f6f8fa;
+}
+
+.shell {
+  max-width: 1040px;
+  margin: 0 auto;
+}
