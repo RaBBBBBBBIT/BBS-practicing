@@ -5,6 +5,9 @@ import {
   fetchThread,
   fetchThreads,
   getCurrentUser,
+  loginUser,
+  logoutUser,
+  registerUser,
   resolveApiBaseUrl
 } from "./forum-api";
 
@@ -129,6 +132,95 @@ describe("forum API client", () => {
     const fetcher = vi.fn().mockResolvedValue(jsonResponse({ message: "Authentication required" }, { ok: false, status: 401 }));
 
     await expect(getCurrentUser(fetcher)).resolves.toBeNull();
+  });
+
+  it("registers users with JSON and browser credentials", async () => {
+    const fetcher = vi.fn().mockResolvedValue(
+      jsonResponse({
+        user: {
+          id: "user_1",
+          email: "alice@example.test",
+          username: "alice",
+          role: "user",
+          status: "active",
+          createdAt: "2026-06-03T00:00:00.000Z"
+        }
+      })
+    );
+
+    await expect(
+      registerUser(
+        {
+          email: "alice@example.test",
+          username: "alice",
+          password: "password123"
+        },
+        fetcher
+      )
+    ).resolves.toMatchObject({
+      id: "user_1",
+      username: "alice"
+    });
+
+    expect(fetcher).toHaveBeenCalledWith("http://localhost:4000/api/auth/register", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        email: "alice@example.test",
+        username: "alice",
+        password: "password123"
+      })
+    });
+  });
+
+  it("logs users in with JSON and browser credentials", async () => {
+    const fetcher = vi.fn().mockResolvedValue(
+      jsonResponse({
+        user: {
+          id: "user_1",
+          email: "alice@example.test",
+          username: "alice",
+          role: "user",
+          status: "active",
+          createdAt: "2026-06-03T00:00:00.000Z"
+        }
+      })
+    );
+
+    await expect(
+      loginUser(
+        {
+          email: "alice@example.test",
+          password: "password123"
+        },
+        fetcher
+      )
+    ).resolves.toMatchObject({
+      id: "user_1",
+      username: "alice"
+    });
+
+    expect(fetcher).toHaveBeenCalledWith("http://localhost:4000/api/auth/login", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        email: "alice@example.test",
+        password: "password123"
+      })
+    });
+  });
+
+  it("logs users out with browser credentials", async () => {
+    const fetcher = vi.fn().mockResolvedValue(jsonResponse(null, { status: 204 }));
+
+    await expect(logoutUser(fetcher)).resolves.toBeUndefined();
+
+    expect(fetcher).toHaveBeenCalledWith("http://localhost:4000/api/auth/logout", {
+      method: "POST",
+      credentials: "include"
+    });
   });
 
   it("throws API errors with status codes", async () => {
