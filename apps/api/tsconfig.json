@@ -1,0 +1,9 @@
+{
+  "extends": "../../packages/tsconfig/nest.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "paths": {},
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts", "test/**/*.ts", "vitest.config.ts"]
+}
