@@ -186,6 +186,51 @@ export const moderationActionSchema = z.object({
 
 export type ModerationActionInput = z.infer<typeof moderationActionSchema>;
 
+export const updateUserAdminSchema = z.object({
+  role: z.nativeEnum(UserRole).optional(),
+  status: z.nativeEnum(UserStatus).optional()
+});
+
+export type UpdateUserAdminInput = z.infer<typeof updateUserAdminSchema>;
+
+export const createBoardAdminSchema = z.object({
+  slug: z.string().min(2).max(80).regex(/^[a-z0-9-]+$/),
+  name: z.string().min(2).max(80),
+  description: z.string().min(1).max(500),
+  status: z.nativeEnum(BoardStatus).default(BoardStatus.Open)
+});
+
+export type CreateBoardAdminInput = z.infer<typeof createBoardAdminSchema>;
+
+export const updateBoardAdminSchema = createBoardAdminSchema.partial();
+
+export type UpdateBoardAdminInput = z.infer<typeof updateBoardAdminSchema>;
+
+const tagStatusSchema = z.enum(["active", "disabled"]);
+
+export const createTagAdminSchema = z.object({
+  name: z.string().min(1).max(24),
+  description: z.string().max(200).default(""),
+  status: tagStatusSchema.default("active")
+});
+
+export type CreateTagAdminInput = z.infer<typeof createTagAdminSchema>;
+
+export const updateTagAdminSchema = z.object({
+  name: z.string().min(1).max(24).optional(),
+  description: z.string().max(200).optional(),
+  status: tagStatusSchema.optional()
+});
+
+export type UpdateTagAdminInput = z.infer<typeof updateTagAdminSchema>;
+
+export const resolveReportSchema = z.object({
+  status: z.enum(["resolved", "rejected"]),
+  note: z.string().max(1000).optional()
+});
+
+export type ResolveReportInput = z.infer<typeof resolveReportSchema>;
+
 export interface NotificationSummary {
   id: string;
   type: "comment" | "reaction" | "follow" | "report" | "moderation" | "message";
@@ -253,4 +298,20 @@ export interface AdminDashboardSummary {
   commentCount: number;
   openReportCount: number;
   pendingReviewCount: number;
+}
+
+export interface AdminUserSummary extends PublicUser {
+  threadCount: number;
+  commentCount: number;
+}
+
+export interface AuditLogSummary {
+  id: string;
+  actorId: string;
+  actorUsername: string;
+  action: string;
+  targetType: string;
+  targetId: string;
+  note: string | null;
+  createdAt: string;
 }

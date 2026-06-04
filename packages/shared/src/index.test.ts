@@ -4,20 +4,28 @@ import {
   createConversationMessageSchema,
   createCommentSchema,
   createHealthResponse,
+  createBoardAdminSchema,
+  createTagAdminSchema,
   createReportSchema,
   createThreadSchema,
   listThreadsQuerySchema,
   loginSchema,
   moderationActionSchema,
   registerSchema,
+  resolveReportSchema,
   ReportReason,
   ReportStatus,
   ThreadStatus,
+  updateBoardAdminSchema,
+  updateTagAdminSchema,
+  updateUserAdminSchema,
   UserRole,
   UserStatus
 } from "./index";
 import type {
   AdminDashboardSummary,
+  AdminUserSummary,
+  AuditLogSummary,
   CommentSummary,
   ConversationSummary,
   NotificationSummary,
@@ -322,5 +330,61 @@ describe("admin schemas", () => {
   it("exposes stable report statuses", () => {
     expect(ReportStatus.Open).toBe("open");
     expect(ReportStatus.Resolved).toBe("resolved");
+  });
+
+  it("validates admin user, board, tag and report inputs", () => {
+    expect(updateUserAdminSchema.parse({ role: UserRole.Moderator, status: UserStatus.Muted })).toEqual({
+      role: UserRole.Moderator,
+      status: UserStatus.Muted
+    });
+    expect(
+      createBoardAdminSchema.parse({
+        slug: "runtime-config",
+        name: "运行时配置",
+        description: "运行时配置问题"
+      })
+    ).toEqual({
+      slug: "runtime-config",
+      name: "运行时配置",
+      description: "运行时配置问题",
+      status: BoardStatus.Open
+    });
+    expect(updateBoardAdminSchema.parse({ status: BoardStatus.Closed })).toEqual({ status: BoardStatus.Closed });
+    expect(createTagAdminSchema.parse({ name: "docker" })).toEqual({
+      name: "docker",
+      description: "",
+      status: "active"
+    });
+    expect(updateTagAdminSchema.parse({ status: "disabled" })).toEqual({ status: "disabled" });
+    expect(resolveReportSchema.parse({ status: "resolved", note: "已处理" })).toEqual({
+      status: "resolved",
+      note: "已处理"
+    });
+  });
+
+  it("describes admin user and audit log summaries", () => {
+    const user: AdminUserSummary = {
+      id: "user_1",
+      email: "alice@example.com",
+      username: "alice",
+      role: UserRole.Admin,
+      status: UserStatus.Active,
+      threadCount: 2,
+      commentCount: 5,
+      createdAt: "2026-06-04T00:00:00.000Z"
+    };
+    const auditLog: AuditLogSummary = {
+      id: "audit_1",
+      actorId: "user_1",
+      actorUsername: "alice",
+      action: "resolveReport",
+      targetType: "report",
+      targetId: "report_1",
+      note: "已处理",
+      createdAt: "2026-06-04T00:00:00.000Z"
+    };
+
+    expect(user.role).toBe(UserRole.Admin);
+    expect(auditLog.action).toBe("resolveReport");
   });
 });

@@ -1,5 +1,7 @@
 import "reflect-metadata";
 import { describe, expect, it } from "vitest";
+import { AdminController } from "../src/admin/admin.controller.js";
+import { AdminService } from "../src/admin/admin.service.js";
 import { AuthController } from "../src/auth/auth.controller.js";
 import { AuthService } from "../src/auth/auth.service.js";
 import { SessionGuard } from "../src/auth/session.guard.js";
@@ -39,7 +41,9 @@ const dependencies = [
   { target: MessagesController, dependency: MessagesService },
   { target: MessagesService, dependency: PrismaService },
   { target: ReportsController, dependency: ReportsService },
-  { target: ReportsService, dependency: PrismaService }
+  { target: ReportsService, dependency: PrismaService },
+  { target: AdminController, dependency: AdminService },
+  { target: AdminService, dependency: PrismaService }
 ];
 
 describe("Nest dependency injection metadata", () => {

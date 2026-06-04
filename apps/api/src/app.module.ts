@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { AdminModule } from "./admin/admin.module.js";
 import { AuthModule } from "./auth/auth.module.js";
 import { BoardsModule } from "./boards/boards.module.js";
 import { HealthModule } from "./health/health.module.js";
@@ -19,7 +20,8 @@ import { ThreadsModule } from "./threads/threads.module.js";
     InteractionsModule,
     NotificationsModule,
     MessagesModule,
-    ReportsModule
+    ReportsModule,
+    AdminModule
   ]
 })
 export class AppModule {}
