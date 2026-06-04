@@ -89,7 +89,20 @@ ON CONFLICT ("slug") DO UPDATE SET
   "status" = EXCLUDED."status",
   "updatedAt" = CURRENT_TIMESTAMP;
 
-INSERT INTO "Thread" ("id", "boardId", "authorId", "title", "body", "status", "tags", "createdAt", "updatedAt")
+INSERT INTO "Tag" ("id", "name", "description", "status", "threadCount", "createdAt", "updatedAt")
+VALUES
+  ('demo_tag_nextjs', 'nextjs', 'Next.js 页面和数据加载', 'ACTIVE', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('demo_tag_nestjs', 'nestjs', 'NestJS API 和模块设计', 'ACTIVE', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('demo_tag_docker', 'docker', 'Docker 和 Compose 本地服务', 'ACTIVE', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('demo_tag_postgresql', 'postgresql', 'PostgreSQL 和 Prisma 数据库', 'ACTIVE', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('demo_tag_auth', 'auth', '登录、会话和权限', 'ACTIVE', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON CONFLICT ("name") DO UPDATE SET
+  "description" = EXCLUDED."description",
+  "status" = EXCLUDED."status",
+  "threadCount" = EXCLUDED."threadCount",
+  "updatedAt" = CURRENT_TIMESTAMP;
+
+INSERT INTO "Thread" ("id", "boardId", "authorId", "title", "body", "status", "tags", "isPinned", "isLocked", "viewCount", "createdAt", "updatedAt")
 VALUES
   (
     'demo_thread_frontend_nextjs',
@@ -99,6 +112,9 @@ VALUES
     '这里记录一个前台页面接入论坛 API 的实践：先整理 view model，再把错误态和空状态放进页面结构里，方便后续扩展。',
     'PUBLISHED',
     ARRAY['nextjs', 'react', 'frontend']::TEXT[],
+    false,
+    false,
+    128,
     CURRENT_TIMESTAMP - INTERVAL '3 days',
     CURRENT_TIMESTAMP - INTERVAL '3 days'
   ),
@@ -110,6 +126,9 @@ VALUES
     '当前登录接口会创建服务端会话，并通过 HttpOnly Cookie 返回给浏览器。这个帖子用来讨论过期时间、退出登录和 /me 校验的边界。',
     'PUBLISHED',
     ARRAY['nestjs', 'auth', 'api']::TEXT[],
+    true,
+    false,
+    96,
     CURRENT_TIMESTAMP - INTERVAL '2 days',
     CURRENT_TIMESTAMP - INTERVAL '2 days'
   ),
@@ -121,6 +140,9 @@ VALUES
     'API 开发服务默认连接 postgresql://bbs:bbs_password@localhost:5432/bbs_dev。启动 Docker 依赖后，可以直接运行迁移、种子和演示数据脚本。',
     'PUBLISHED',
     ARRAY['postgresql', 'prisma', 'local-dev']::TEXT[],
+    false,
+    false,
+    64,
     CURRENT_TIMESTAMP - INTERVAL '1 day',
     CURRENT_TIMESTAMP - INTERVAL '1 day'
   ),
@@ -132,6 +154,9 @@ VALUES
     '本项目本地依赖包括 PostgreSQL、Redis 和 MinIO。建议先确认容器健康，再启动 API 与 Web 前台。',
     'PUBLISHED',
     ARRAY['docker', 'compose', 'devops']::TEXT[],
+    false,
+    false,
+    184,
     CURRENT_TIMESTAMP - INTERVAL '6 hours',
     CURRENT_TIMESTAMP - INTERVAL '6 hours'
   )
@@ -142,6 +167,9 @@ ON CONFLICT ("id") DO UPDATE SET
   "body" = EXCLUDED."body",
   "status" = EXCLUDED."status",
   "tags" = EXCLUDED."tags",
+  "isPinned" = EXCLUDED."isPinned",
+  "isLocked" = EXCLUDED."isLocked",
+  "viewCount" = EXCLUDED."viewCount",
   "updatedAt" = CURRENT_TIMESTAMP;
 
 INSERT INTO "Comment" ("id", "threadId", "authorId", "parentId", "body", "createdAt", "updatedAt")
@@ -188,5 +216,128 @@ ON CONFLICT ("id") DO UPDATE SET
   "parentId" = EXCLUDED."parentId",
   "body" = EXCLUDED."body",
   "updatedAt" = CURRENT_TIMESTAMP;
+
+INSERT INTO "Reaction" ("id", "threadId", "userId", "createdAt")
+VALUES
+  (
+    'demo_reaction_devops_bob',
+    'demo_thread_devops_compose',
+    (SELECT "id" FROM "User" WHERE "email" = 'bob@example.com'),
+    CURRENT_TIMESTAMP - INTERVAL '3 hours'
+  )
+ON CONFLICT ("threadId", "userId") DO NOTHING;
+
+INSERT INTO "Bookmark" ("id", "threadId", "userId", "createdAt")
+VALUES
+  (
+    'demo_bookmark_backend_alice',
+    'demo_thread_backend_auth',
+    (SELECT "id" FROM "User" WHERE "email" = 'alice@example.com'),
+    CURRENT_TIMESTAMP - INTERVAL '1 day'
+  )
+ON CONFLICT ("threadId", "userId") DO NOTHING;
+
+INSERT INTO "Follow" ("id", "followerId", "followingId", "createdAt")
+VALUES
+  (
+    'demo_follow_alice_bob',
+    (SELECT "id" FROM "User" WHERE "email" = 'alice@example.com'),
+    (SELECT "id" FROM "User" WHERE "email" = 'bob@example.com'),
+    CURRENT_TIMESTAMP - INTERVAL '1 day'
+  )
+ON CONFLICT ("followerId", "followingId") DO NOTHING;
+
+INSERT INTO "Notification" ("id", "userId", "type", "title", "body", "isRead", "createdAt")
+VALUES
+  (
+    'demo_notification_comment',
+    (SELECT "id" FROM "User" WHERE "email" = 'alice@example.com'),
+    'COMMENT',
+    '有新的评论',
+    'bob_demo 评论了你的 Docker Compose 主题。',
+    false,
+    CURRENT_TIMESTAMP - INTERVAL '3 hours'
+  )
+ON CONFLICT ("id") DO UPDATE SET
+  "userId" = EXCLUDED."userId",
+  "type" = EXCLUDED."type",
+  "title" = EXCLUDED."title",
+  "body" = EXCLUDED."body",
+  "isRead" = EXCLUDED."isRead";
+
+INSERT INTO "Conversation" ("id", "userAId", "userBId", "createdAt", "updatedAt")
+VALUES
+  (
+    'demo_conversation_alice_bob',
+    (SELECT "id" FROM "User" WHERE "email" = 'alice@example.com'),
+    (SELECT "id" FROM "User" WHERE "email" = 'bob@example.com'),
+    CURRENT_TIMESTAMP - INTERVAL '1 day',
+    CURRENT_TIMESTAMP - INTERVAL '1 day'
+  )
+ON CONFLICT ("userAId", "userBId") DO UPDATE SET
+  "updatedAt" = CURRENT_TIMESTAMP - INTERVAL '1 day';
+
+INSERT INTO "Message" ("id", "conversationId", "senderId", "body", "createdAt")
+VALUES
+  (
+    'demo_message_alice_bob_1',
+    (
+      SELECT "id"
+      FROM "Conversation"
+      WHERE "userAId" = (SELECT "id" FROM "User" WHERE "email" = 'alice@example.com')
+        AND "userBId" = (SELECT "id" FROM "User" WHERE "email" = 'bob@example.com')
+    ),
+    (SELECT "id" FROM "User" WHERE "email" = 'alice@example.com'),
+    '我把 Docker Compose 清单整理好了，你帮忙看下后台说明。',
+    CURRENT_TIMESTAMP - INTERVAL '1 day'
+  )
+ON CONFLICT ("id") DO UPDATE SET
+  "conversationId" = EXCLUDED."conversationId",
+  "senderId" = EXCLUDED."senderId",
+  "body" = EXCLUDED."body";
+
+INSERT INTO "Report" ("id", "targetType", "threadId", "commentId", "reporterId", "reason", "detail", "status", "resolvedAt", "createdAt", "updatedAt")
+VALUES
+  (
+    'demo_report_backend_auth',
+    'THREAD',
+    'demo_thread_backend_auth',
+    NULL,
+    (SELECT "id" FROM "User" WHERE "email" = 'alice@example.com'),
+    'OTHER',
+    '演示后台举报处理流程。',
+    'OPEN',
+    NULL,
+    CURRENT_TIMESTAMP - INTERVAL '12 hours',
+    CURRENT_TIMESTAMP - INTERVAL '12 hours'
+  )
+ON CONFLICT ("id") DO UPDATE SET
+  "targetType" = EXCLUDED."targetType",
+  "threadId" = EXCLUDED."threadId",
+  "commentId" = EXCLUDED."commentId",
+  "reporterId" = EXCLUDED."reporterId",
+  "reason" = EXCLUDED."reason",
+  "detail" = EXCLUDED."detail",
+  "status" = EXCLUDED."status",
+  "resolvedAt" = EXCLUDED."resolvedAt",
+  "updatedAt" = CURRENT_TIMESTAMP;
+
+INSERT INTO "AuditLog" ("id", "actorId", "action", "targetType", "targetId", "note", "createdAt")
+VALUES
+  (
+    'demo_audit_seed',
+    (SELECT "id" FROM "User" WHERE "email" = 'admin@example.com'),
+    'seedDemoData',
+    'system',
+    'demo',
+    '初始化完整演示数据',
+    CURRENT_TIMESTAMP
+  )
+ON CONFLICT ("id") DO UPDATE SET
+  "actorId" = EXCLUDED."actorId",
+  "action" = EXCLUDED."action",
+  "targetType" = EXCLUDED."targetType",
+  "targetId" = EXCLUDED."targetId",
+  "note" = EXCLUDED."note";
 
 COMMIT;
