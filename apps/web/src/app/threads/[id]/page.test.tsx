@@ -18,6 +18,18 @@ vi.mock("../../../components/comment-form", () => ({
   )
 }));
 
+vi.mock("../../../components/thread-actions", () => ({
+  ThreadActionPanel: () => (
+    <div className="thread-action-panel">
+      <button type="button">点赞</button>
+      <button type="button">收藏</button>
+      <button type="button">关注作者</button>
+      <button type="button">举报</button>
+      <button type="button">编辑</button>
+    </div>
+  )
+}));
+
 const thread: ThreadDetail = {
   id: "thread_1",
   boardId: "board_1",
@@ -66,7 +78,10 @@ describe("ThreadDetailPage", () => {
     expect(html).toContain("搜索或跳转...");
     expect(html).toContain("发起讨论");
     expect(html).toContain("编辑");
-    expect(html).toContain("订阅");
+    expect(html).toContain("点赞");
+    expect(html).toContain("收藏");
+    expect(html).toContain("关注作者");
+    expect(html).toContain("举报");
     expect(html).toContain("API 错误处理实践");
     expect(html).toContain("开放");
     expect(html).toContain("已回复");

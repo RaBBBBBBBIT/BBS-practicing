@@ -4,6 +4,7 @@ import type { CommentSummary, ThreadDetail } from "@bbs/shared";
 import { CommentForm } from "../../../components/comment-form";
 import { GlobalTopBar, CommunityTabs } from "../../../components/community-chrome";
 import { TagList } from "../../../components/tag-list";
+import { ThreadActionPanel } from "../../../components/thread-actions";
 import { fetchThread } from "../../../lib/forum-api";
 import { formatThreadDate } from "../../../lib/forum-view-model";
 
@@ -109,7 +110,10 @@ function ThreadTitleBar({ thread, answerStatus }: { thread: ThreadDetail; answer
           </div>
         </div>
         <p>
-          <strong>{thread.authorUsername}</strong> 于 <time dateTime={thread.createdAt}>{formatThreadDate(thread.createdAt)}</time> 在{" "}
+          <Link href={`/users/${encodeURIComponent(thread.authorUsername)}`}>
+            <strong>{thread.authorUsername}</strong>
+          </Link>{" "}
+          于 <time dateTime={thread.createdAt}>{formatThreadDate(thread.createdAt)}</time> 在{" "}
           <Link href={`/boards/${thread.boardSlug}`}>{thread.boardName}</Link> 发起了这条讨论
         </p>
       </div>
@@ -117,13 +121,8 @@ function ThreadTitleBar({ thread, answerStatus }: { thread: ThreadDetail; answer
         <Link className="primary-action" href="/threads/new">
           发起讨论
         </Link>
-        <button className="toolbar-button" type="button">
-          编辑
-        </button>
-        <button className="toolbar-button" type="button">
-          订阅
-        </button>
       </div>
+      <ThreadActionPanel thread={thread} />
     </header>
   );
 }
@@ -191,7 +190,9 @@ function ThreadSidebar({
         <h2>参与者</h2>
         <div className="participant-stack">
           {participants.map((participant) => (
-            <Avatar key={participant} username={participant} compact />
+            <Link key={participant} href={`/users/${encodeURIComponent(participant)}`}>
+              <Avatar username={participant} compact />
+            </Link>
           ))}
         </div>
       </section>

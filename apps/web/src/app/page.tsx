@@ -2,32 +2,37 @@ import Link from "next/link";
 import type { BoardSummary, ThreadSummary } from "@bbs/shared";
 import { GlobalTopBar, CommunityTabs } from "../components/community-chrome";
 import { TagList } from "../components/tag-list";
+import { DiscussionThreadList } from "../components/thread-list";
 import { fetchBoards, fetchThreads } from "../lib/forum-api";
-import { formatThreadDate, getBoardHref, getThreadHref } from "../lib/forum-view-model";
 import { getHomePageCopy } from "../lib/home-copy";
 
 export const dynamic = "force-dynamic";
 
-export default async function HomePage() {
+interface HomePageProps {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}
+
+export default async function HomePage({ searchParams }: HomePageProps = {}) {
   const copy = getHomePageCopy();
+  const filters = parseThreadFilters(await searchParams);
 
   try {
-    const [boards, threads] = await Promise.all([fetchBoards(), fetchThreads()]);
+    const [boards, threads] = await Promise.all([fetchBoards(), fetchThreads(filters)]);
 
     return (
       <>
         <GlobalTopBar />
         <main className="page-shell discussion-shell">
           <CommunityHeader title={copy.title} subtitle={copy.subtitle} badge={copy.badge} boards={boards} threads={threads} />
-          <WorkbenchToolbar />
+          <WorkbenchToolbar filters={filters} boards={boards} />
           <section className="discussion-layout" aria-label="开发者讨论工作台">
-            <CategorySidebar boards={boards} />
+            <CategorySidebar boards={boards} activeBoardSlug={filters.boardSlug ?? ""} />
             <section className="discussion-main" aria-label="讨论列表">
               <div className="discussion-heading">
                 <h2>讨论</h2>
                 <span>{threads.length} 条开放讨论</span>
               </div>
-              <ThreadList threads={threads} />
+              <DiscussionThreadList threads={threads} />
             </section>
             <CommunitySidebar boards={boards} threads={threads} />
           </section>
@@ -85,32 +90,47 @@ function CommunityHeader({
   );
 }
 
-function WorkbenchToolbar() {
+function WorkbenchToolbar({ filters, boards }: { filters: ThreadFilters; boards: BoardSummary[] }) {
   return (
-    <section className="discussion-toolbar" aria-label="讨论筛选工具栏">
+    <form className="discussion-toolbar" aria-label="讨论筛选工具栏">
       <label className="discussion-search">
         <span className="sr-only">筛选讨论</span>
-        <input type="search" defaultValue="is:open" />
+        <input type="search" name="q" placeholder="搜索标题、正文或作者..." defaultValue={filters.q ?? ""} />
       </label>
       <div className="filter-actions">
-        <button className="toolbar-button" type="button">
-          排序：最近活跃
-        </button>
-        <button className="toolbar-button" type="button">
-          标签
-        </button>
-        <button className="toolbar-button" type="button">
-          分区
+        <label className="toolbar-select">
+          <span className="sr-only">排序</span>
+          <select name="sort" defaultValue={filters.sort ?? "active"}>
+            <option value="active">最近活跃</option>
+            <option value="latest">最新发布</option>
+            <option value="popular">热度最高</option>
+            <option value="oldest">最早发布</option>
+          </select>
+        </label>
+        <label className="toolbar-select">
+          <span className="sr-only">分区</span>
+          <select name="boardSlug" defaultValue={filters.boardSlug ?? ""}>
+            <option value="">全部分区</option>
+            {boards.map((board) => (
+              <option key={board.id} value={board.slug}>
+                {board.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <input name="tag" type="hidden" value={filters.tag ?? ""} />
+        <button className="toolbar-button" type="submit">
+          筛选
         </button>
         <Link className="primary-action" href="/threads/new">
           发起讨论
         </Link>
       </div>
-    </section>
+    </form>
   );
 }
 
-function CategorySidebar({ boards }: { boards: BoardSummary[] }) {
+function CategorySidebar({ boards, activeBoardSlug }: { boards: BoardSummary[]; activeBoardSlug?: string }) {
   if (boards.length === 0) {
     return <p className="empty-state">暂无分区。</p>;
   }
@@ -121,13 +141,18 @@ function CategorySidebar({ boards }: { boards: BoardSummary[] }) {
     <aside className="category-sidebar" id="categories" aria-label="分区">
       <h2>分区</h2>
       <nav className="category-list" aria-label="讨论分区">
-        <Link className="category-item is-active" href="/">
+        <Link className={`category-item ${activeBoardSlug ? "" : "is-active"}`} href="/">
           <span className="category-dot category-all" aria-hidden="true" />
           <span>查看全部讨论</span>
           <small>{totalThreadCount}</small>
         </Link>
         {boards.map((board) => (
-          <Link className="category-item" key={board.id} href={getBoardHref(board)} title={board.description}>
+          <Link
+            className={`category-item ${activeBoardSlug === board.slug ? "is-active" : ""}`}
+            key={board.id}
+            href={`/?boardSlug=${encodeURIComponent(board.slug)}`}
+            title={board.description}
+          >
             <span className={`category-dot category-${board.slug}`} aria-hidden="true" />
             <span>{board.name}</span>
             <small>{board.threadCount}</small>
@@ -135,49 +160,6 @@ function CategorySidebar({ boards }: { boards: BoardSummary[] }) {
         ))}
       </nav>
     </aside>
-  );
-}
-
-function ThreadList({ threads }: { threads: ThreadSummary[] }) {
-  if (threads.length === 0) {
-    return (
-      <div className="empty-state discussion-empty">
-        <h3>暂无开放讨论</h3>
-        <p>导入演示数据或发布第一条主题后，这里会展示讨论列表。</p>
-      </div>
-    );
-  }
-
-  return (
-    <ul className="discussion-list" id="discussions">
-      {threads.map((thread, index) => (
-        <li className="discussion-row" key={thread.id}>
-          <div className="discussion-status" aria-hidden="true">
-            {getStatusIcon(thread, index)}
-          </div>
-          <div className="discussion-content">
-            <div className="discussion-title-row">
-              <Link className="thread-title" href={getThreadHref(thread)}>
-                {thread.title}
-              </Link>
-              <TagList tags={getDisplayTags(thread, index)} />
-            </div>
-            <p>{thread.excerpt}</p>
-            <div className="thread-meta">
-              <span>
-                #{index + 1} 由 {thread.authorUsername} 于 {formatRelativeActivity(thread.createdAt)} 发起
-              </span>
-              <span>分区：{thread.boardName}</span>
-            </div>
-          </div>
-          <div className="discussion-metrics" aria-label="讨论热度">
-            <span>{getCommentCount(index)} 条评论</span>
-            <span>{getViewCount(index)} 次浏览</span>
-            <time dateTime={thread.updatedAt}>{formatRelativeActivity(thread.updatedAt)}</time>
-          </div>
-        </li>
-      ))}
-    </ul>
   );
 }
 
@@ -232,54 +214,28 @@ function UnavailablePanel({ message }: { message: string }) {
   );
 }
 
-function getStatusIcon(thread: ThreadSummary, index: number): string {
-  if (thread.tags.includes("solved")) {
-    return "✓";
-  }
-
-  if (index === 0) {
-    return "!";
-  }
-
-  return "○";
+interface ThreadFilters {
+  boardSlug?: string | undefined;
+  q?: string | undefined;
+  tag?: string | undefined;
+  sort?: "latest" | "oldest" | "active" | "popular";
 }
 
-function getDisplayTags(thread: ThreadSummary, index: number): string[] {
-  const statusTag = index % 3 === 0 ? "unanswered" : "open";
-  return [...thread.tags, statusTag].slice(0, 5);
+function parseThreadFilters(searchParams?: Record<string, string | string[] | undefined>): ThreadFilters {
+  const sort = getSingleParam(searchParams?.sort);
+
+  return {
+    boardSlug: getSingleParam(searchParams?.boardSlug),
+    q: getSingleParam(searchParams?.q),
+    tag: getSingleParam(searchParams?.tag),
+    sort: sort === "latest" || sort === "oldest" || sort === "popular" || sort === "active" ? sort : "active"
+  };
 }
 
-function getCommentCount(index: number): number {
-  return [8, 4, 2, 1][index % 4] ?? 1;
-}
-
-function getViewCount(index: number): number {
-  return [128, 96, 64, 32][index % 4] ?? 24;
-}
-
-function formatRelativeActivity(value: string): string {
-  const timestamp = new Date(value).getTime();
-
-  if (Number.isNaN(timestamp)) {
-    return formatThreadDate(value);
+function getSingleParam(value: string | string[] | undefined): string | undefined {
+  if (Array.isArray(value)) {
+    return value[0];
   }
 
-  const seconds = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
-  const minutes = Math.floor(seconds / 60);
-  const hours = Math.floor(minutes / 60);
-  const days = Math.floor(hours / 24);
-
-  if (days > 0) {
-    return `${days} 天前`;
-  }
-
-  if (hours > 0) {
-    return `${hours} 小时前`;
-  }
-
-  if (minutes > 0) {
-    return `${minutes} 分钟前`;
-  }
-
-  return "刚刚";
+  return value || undefined;
 }

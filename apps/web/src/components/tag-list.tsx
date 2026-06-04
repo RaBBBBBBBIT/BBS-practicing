@@ -1,10 +1,13 @@
+import Link from "next/link";
+
 interface TagListProps {
   tags: string[];
   className?: string;
   ariaLabel?: string;
+  linked?: boolean;
 }
 
-export function TagList({ tags, className, ariaLabel = "标签" }: TagListProps) {
+export function TagList({ tags, className, ariaLabel = "标签", linked = true }: TagListProps) {
   if (tags.length === 0) {
     return null;
   }
@@ -14,11 +17,24 @@ export function TagList({ tags, className, ariaLabel = "标签" }: TagListProps)
   return (
     <div className={classes} aria-label={ariaLabel}>
       {tags.map((tag) => (
-        <span className={`tag-pill ${getTagTone(tag)}`} key={tag}>
-          {getTagLabel(tag)}
-        </span>
+        <TagPill key={tag} tag={tag} linked={linked} />
       ))}
     </div>
+  );
+}
+
+function TagPill({ tag, linked }: { tag: string; linked: boolean }) {
+  const className = `tag-pill ${getTagTone(tag)}`;
+  const label = getTagLabel(tag);
+
+  if (!linked) {
+    return <span className={className}>{label}</span>;
+  }
+
+  return (
+    <Link className={className} href={`/?tag=${encodeURIComponent(tag)}`}>
+      {label}
+    </Link>
   );
 }
 
@@ -54,6 +70,7 @@ export function getTagLabel(tag: string): string {
     open: "开放",
     security: "安全",
     solved: "已解决",
+    locked: "已锁定",
     unanswered: "待回复"
   };
 

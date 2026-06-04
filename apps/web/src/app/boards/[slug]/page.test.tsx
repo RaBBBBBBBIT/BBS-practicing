@@ -63,7 +63,7 @@ describe("BoardPage", () => {
     const html = renderToStaticMarkup(await BoardPage({ params: Promise.resolve({ slug: "backend" }) }));
 
     expect(fetchBoards).toHaveBeenCalledOnce();
-    expect(fetchThreads).toHaveBeenCalledWith({ boardSlug: "backend" });
+    expect(fetchThreads).toHaveBeenCalledWith({ boardSlug: "backend", q: undefined, sort: "active" });
     expect(html).toContain("后端开发");
     expect(html).toContain("讨论 NestJS、数据库和服务端工程。");
     expect(html).toContain("API 错误处理实践");

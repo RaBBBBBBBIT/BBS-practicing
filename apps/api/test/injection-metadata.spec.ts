@@ -16,8 +16,12 @@ import { NotificationsService } from "../src/notifications/notifications.service
 import { PrismaService } from "../src/prisma/prisma.service.js";
 import { ReportsController } from "../src/reports/reports.controller.js";
 import { ReportsService } from "../src/reports/reports.service.js";
+import { TagsController } from "../src/tags/tags.controller.js";
+import { TagsService } from "../src/tags/tags.service.js";
 import { ThreadsController } from "../src/threads/threads.controller.js";
 import { ThreadsService } from "../src/threads/threads.service.js";
+import { UsersController } from "../src/users/users.controller.js";
+import { UsersService } from "../src/users/users.service.js";
 
 const SELF_DECLARED_DEPS_METADATA = "self:paramtypes";
 
@@ -43,7 +47,11 @@ const dependencies = [
   { target: ReportsController, dependency: ReportsService },
   { target: ReportsService, dependency: PrismaService },
   { target: AdminController, dependency: AdminService },
-  { target: AdminService, dependency: PrismaService }
+  { target: AdminService, dependency: PrismaService },
+  { target: UsersController, dependency: UsersService },
+  { target: UsersService, dependency: PrismaService },
+  { target: TagsController, dependency: TagsService },
+  { target: TagsService, dependency: PrismaService }
 ];
 
 describe("Nest dependency injection metadata", () => {

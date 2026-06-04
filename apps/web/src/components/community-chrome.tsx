@@ -6,8 +6,8 @@ const communityTabs: Array<{ id: CommunityTab; href: string; label: string }> = 
   { id: "overview", href: "/", label: "概览" },
   { id: "categories", href: "/#categories", label: "分区" },
   { id: "discussions", href: "/#discussions", label: "讨论" },
-  { id: "members", href: "/#members", label: "成员" },
-  { id: "labels", href: "/#labels", label: "标签" }
+  { id: "members", href: "/members", label: "成员" },
+  { id: "labels", href: "/tags", label: "标签" }
 ];
 
 export function GlobalTopBar() {
@@ -26,8 +26,10 @@ export function GlobalTopBar() {
       <nav className="topbar-links" aria-label="主导航">
         <Link href="/#discussions">讨论</Link>
         <Link href="/#categories">分区</Link>
-        <Link href="/#labels">标签</Link>
-        <Link href="/#members">成员</Link>
+        <Link href="/tags">标签</Link>
+        <Link href="/members">成员</Link>
+        <Link href="/notifications">通知</Link>
+        <Link href="/messages">私信</Link>
       </nav>
       <nav className="topbar-auth" aria-label="用户操作">
         <Link href="/login">登录</Link>

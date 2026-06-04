@@ -87,12 +87,12 @@
 - Modify: `apps/web/src/lib/forum-api.test.ts`
 - Modify: `apps/web/src/app/globals.css`
 
-- [ ] 接入首页和分区页真实搜索、筛选、排序。
-- [ ] 接入详情页编辑、点赞、收藏、关注、举报。
-- [ ] 新增标签页、成员页、个人主页、通知页、私信页。
-- [ ] 保持中文 UI 和 GitHub 风格信息密度。
-- [ ] 运行 web tests、typecheck、build、lint。
-- [ ] 提交：`功能：补齐前台社区功能`。
+- [x] 接入首页和分区页真实搜索、筛选、排序。
+- [x] 接入详情页编辑、点赞、收藏、关注、举报。
+- [x] 新增标签页、成员页、个人主页、通知页、私信页。
+- [x] 保持中文 UI 和 GitHub 风格信息密度。
+- [x] 运行 web tests、typecheck、build、lint。
+- [x] 提交：`功能：补齐前台社区功能`。
 
 ## Task 6: 后台页面接入
 
@@ -101,11 +101,11 @@
 - Modify/Create files under `apps/admin/src/lib`
 - Modify: `apps/admin/src/app/globals.css`
 
-- [ ] 接入后台仪表盘统计。
-- [ ] 接入举报处理、主题审核、用户管理、分区管理、标签管理视图。
-- [ ] 保持工具型后台，不做营销首页。
-- [ ] 运行 admin tests、typecheck、build、lint。
-- [ ] 提交：`功能：接入后台管理页面`。
+- [x] 接入后台仪表盘统计。
+- [x] 接入举报处理、主题审核、用户管理、分区管理、标签管理视图。
+- [x] 保持工具型后台，不做营销首页。
+- [x] 运行 admin tests、typecheck、build、lint。
+- [x] 提交：`功能：接入后台管理页面`。
 
 ## Task 7: 数据初始化和文档
 

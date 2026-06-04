@@ -8,7 +8,9 @@ import { MessagesModule } from "./messages/messages.module.js";
 import { NotificationsModule } from "./notifications/notifications.module.js";
 import { PrismaModule } from "./prisma/prisma.module.js";
 import { ReportsModule } from "./reports/reports.module.js";
+import { TagsModule } from "./tags/tags.module.js";
 import { ThreadsModule } from "./threads/threads.module.js";
+import { UsersModule } from "./users/users.module.js";
 
 @Module({
   imports: [
@@ -21,7 +23,9 @@ import { ThreadsModule } from "./threads/threads.module.js";
     NotificationsModule,
     MessagesModule,
     ReportsModule,
-    AdminModule
+    AdminModule,
+    UsersModule,
+    TagsModule
   ]
 })
 export class AppModule {}
