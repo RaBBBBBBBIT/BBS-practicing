@@ -38,7 +38,14 @@ export class ThreadsService {
       },
       include: {
         board: true,
-        author: true
+        author: true,
+        _count: {
+          select: {
+            comments: true,
+            reactions: true,
+            bookmarks: true
+          }
+        }
       }
     });
 
@@ -54,7 +61,14 @@ export class ThreadsService {
       orderBy: { createdAt: "desc" },
       include: {
         board: true,
-        author: true
+        author: true,
+        _count: {
+          select: {
+            comments: true,
+            reactions: true,
+            bookmarks: true
+          }
+        }
       }
     });
 
@@ -70,6 +84,13 @@ export class ThreadsService {
       include: {
         board: true,
         author: true,
+        _count: {
+          select: {
+            comments: true,
+            reactions: true,
+            bookmarks: true
+          }
+        },
         comments: {
           where: { parentId: null },
           orderBy: { createdAt: "asc" },
@@ -134,6 +155,10 @@ export class ThreadsService {
     body: string;
     status: PrismaThreadStatus;
     tags: string[];
+    isPinned: boolean;
+    isLocked: boolean;
+    viewCount: number;
+    _count: { comments: number; reactions: number; bookmarks: number };
     createdAt: Date;
     updatedAt: Date;
   }): ThreadSummary {
@@ -148,6 +173,14 @@ export class ThreadsService {
       excerpt: this.createExcerpt(thread.body),
       status: this.toPublicStatus(thread.status),
       tags: thread.tags,
+      commentCount: thread._count.comments,
+      reactionCount: thread._count.reactions,
+      bookmarkCount: thread._count.bookmarks,
+      viewCount: thread.viewCount,
+      isPinned: thread.isPinned,
+      isLocked: thread.isLocked,
+      viewerHasReacted: false,
+      viewerHasBookmarked: false,
       createdAt: thread.createdAt.toISOString(),
       updatedAt: thread.updatedAt.toISOString()
     };
@@ -163,6 +196,10 @@ export class ThreadsService {
     body: string;
     status: PrismaThreadStatus;
     tags: string[];
+    isPinned: boolean;
+    isLocked: boolean;
+    viewCount: number;
+    _count: { comments: number; reactions: number; bookmarks: number };
     comments: Array<{
       id: string;
       threadId: string;
@@ -187,6 +224,14 @@ export class ThreadsService {
       body: thread.body,
       status: this.toPublicStatus(thread.status),
       tags: thread.tags,
+      commentCount: thread._count.comments,
+      reactionCount: thread._count.reactions,
+      bookmarkCount: thread._count.bookmarks,
+      viewCount: thread.viewCount,
+      isPinned: thread.isPinned,
+      isLocked: thread.isLocked,
+      viewerHasReacted: false,
+      viewerHasBookmarked: false,
       comments: thread.comments.map((comment) => this.toCommentSummary(comment)),
       createdAt: thread.createdAt.toISOString(),
       updatedAt: thread.updatedAt.toISOString()

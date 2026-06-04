@@ -41,6 +41,14 @@ const thread: ThreadDetail = {
       updatedAt: "2026-06-03T09:15:00.000Z"
     }
   ],
+  commentCount: 1,
+  reactionCount: 2,
+  bookmarkCount: 1,
+  viewCount: 64,
+  isPinned: false,
+  isLocked: false,
+  viewerHasReacted: false,
+  viewerHasBookmarked: false,
   createdAt: "2026-06-03T08:15:00.000Z",
   updatedAt: "2026-06-03T08:15:00.000Z"
 };

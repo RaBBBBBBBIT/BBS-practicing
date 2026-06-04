@@ -32,6 +32,14 @@ const threads: ThreadSummary[] = [
     excerpt: "想讨论一下模块拆分和 provider 组织方式。",
     status: ThreadStatus.Published,
     tags: ["nestjs", "architecture"],
+    commentCount: 2,
+    reactionCount: 3,
+    bookmarkCount: 1,
+    viewCount: 128,
+    isPinned: false,
+    isLocked: false,
+    viewerHasReacted: false,
+    viewerHasBookmarked: false,
     createdAt: "2026-06-03T08:15:00.000Z",
     updatedAt: "2026-06-03T08:15:00.000Z"
   }

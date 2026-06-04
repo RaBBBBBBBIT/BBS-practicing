@@ -25,6 +25,19 @@ export enum ThreadStatus {
   Deleted = "deleted"
 }
 
+export enum ReportReason {
+  Spam = "spam",
+  Harassment = "harassment",
+  Illegal = "illegal",
+  Other = "other"
+}
+
+export enum ReportStatus {
+  Open = "open",
+  Resolved = "resolved",
+  Rejected = "rejected"
+}
+
 export interface HealthResponse {
   status: "ok";
   service: string;
@@ -87,6 +100,24 @@ export const createThreadSchema = z.object({
 
 export type CreateThreadInput = z.infer<typeof createThreadSchema>;
 
+export const listThreadsQuerySchema = z.object({
+  q: z.string().max(120).optional(),
+  boardSlug: z.string().min(1).max(80).optional(),
+  tag: z.string().min(1).max(24).optional(),
+  status: z.nativeEnum(ThreadStatus).optional(),
+  sort: z.enum(["latest", "oldest", "active", "popular"]).default("active")
+});
+
+export type ListThreadsQuery = z.infer<typeof listThreadsQuerySchema>;
+
+export const updateThreadSchema = z.object({
+  title: z.string().min(5).max(120).optional(),
+  body: z.string().min(10).max(20000).optional(),
+  tags: z.array(z.string().min(1).max(24)).max(5).optional()
+});
+
+export type UpdateThreadInput = z.infer<typeof updateThreadSchema>;
+
 export const createCommentSchema = z.object({
   body: z.string().min(1).max(5000)
 });
@@ -115,6 +146,14 @@ export interface ThreadSummary {
   excerpt: string;
   status: ThreadStatus;
   tags: string[];
+  commentCount: number;
+  reactionCount: number;
+  bookmarkCount: number;
+  viewCount: number;
+  isPinned: boolean;
+  isLocked: boolean;
+  viewerHasReacted: boolean;
+  viewerHasBookmarked: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -122,4 +161,96 @@ export interface ThreadSummary {
 export interface ThreadDetail extends Omit<ThreadSummary, "excerpt"> {
   body: string;
   comments: CommentSummary[];
+}
+
+export const createReportSchema = z.object({
+  targetType: z.enum(["thread", "comment"]),
+  targetId: z.string().min(1),
+  reason: z.nativeEnum(ReportReason),
+  detail: z.string().max(1000).optional()
+});
+
+export type CreateReportInput = z.infer<typeof createReportSchema>;
+
+export const createConversationMessageSchema = z.object({
+  recipientId: z.string().min(1),
+  body: z.string().min(1).max(5000)
+});
+
+export type CreateConversationMessageInput = z.infer<typeof createConversationMessageSchema>;
+
+export const moderationActionSchema = z.object({
+  action: z.enum(["hide", "restore", "pin", "unpin", "lock", "unlock", "resolveReport", "rejectReport"]),
+  note: z.string().max(1000).optional()
+});
+
+export type ModerationActionInput = z.infer<typeof moderationActionSchema>;
+
+export interface NotificationSummary {
+  id: string;
+  type: "comment" | "reaction" | "follow" | "report" | "moderation" | "message";
+  title: string;
+  body: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export interface ConversationSummary {
+  id: string;
+  participantId: string;
+  participantUsername: string;
+  lastMessageBody: string;
+  unreadCount: number;
+  updatedAt: string;
+}
+
+export interface MessageSummary {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  senderUsername: string;
+  body: string;
+  createdAt: string;
+}
+
+export interface ReportSummary {
+  id: string;
+  targetType: "thread" | "comment";
+  targetId: string;
+  reporterId: string;
+  reporterUsername: string;
+  reason: ReportReason;
+  detail: string | null;
+  status: ReportStatus;
+  createdAt: string;
+  resolvedAt: string | null;
+}
+
+export interface TagSummary {
+  id: string;
+  name: string;
+  description: string;
+  status: "active" | "disabled";
+  threadCount: number;
+}
+
+export interface UserProfileSummary {
+  id: string;
+  username: string;
+  role: UserRole;
+  status: UserStatus;
+  threadCount: number;
+  commentCount: number;
+  followerCount: number;
+  followingCount: number;
+  viewerIsFollowing: boolean;
+  createdAt: string;
+}
+
+export interface AdminDashboardSummary {
+  userCount: number;
+  threadCount: number;
+  commentCount: number;
+  openReportCount: number;
+  pendingReviewCount: number;
 }

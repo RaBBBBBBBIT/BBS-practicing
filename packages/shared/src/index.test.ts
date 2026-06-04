@@ -1,16 +1,31 @@
 import { describe, expect, it } from "vitest";
 import {
   BoardStatus,
+  createConversationMessageSchema,
   createCommentSchema,
   createHealthResponse,
+  createReportSchema,
   createThreadSchema,
+  listThreadsQuerySchema,
   loginSchema,
+  moderationActionSchema,
   registerSchema,
+  ReportReason,
+  ReportStatus,
   ThreadStatus,
   UserRole,
   UserStatus
 } from "./index";
-import type { CommentSummary, ThreadDetail } from "./index";
+import type {
+  AdminDashboardSummary,
+  CommentSummary,
+  ConversationSummary,
+  NotificationSummary,
+  TagSummary,
+  ThreadDetail,
+  ThreadSummary,
+  UserProfileSummary
+} from "./index";
 
 describe("shared domain constants", () => {
   it("exposes stable role and status values", () => {
@@ -146,6 +161,14 @@ describe("thread schemas", () => {
       status: ThreadStatus.Published,
       tags: ["nestjs", "debugging"],
       comments: [comment],
+      commentCount: 1,
+      reactionCount: 0,
+      bookmarkCount: 0,
+      viewCount: 0,
+      isPinned: false,
+      isLocked: false,
+      viewerHasReacted: false,
+      viewerHasBookmarked: false,
       createdAt: "2026-06-03T00:00:00.000Z",
       updatedAt: "2026-06-03T00:00:00.000Z"
     };
@@ -159,5 +182,145 @@ describe("thread schemas", () => {
     expect(createCommentSchema.parse({ body: "这是一条评论" })).toEqual({ body: "这是一条评论" });
     expect(() => createCommentSchema.parse({ body: "" })).toThrow();
     expect(() => createCommentSchema.parse({ body: "a".repeat(5001) })).toThrow();
+  });
+
+  it("validates public thread search and filter query input", () => {
+    expect(
+      listThreadsQuerySchema.parse({
+        q: "docker",
+        boardSlug: "devops",
+        tag: "compose",
+        status: ThreadStatus.Published,
+        sort: "latest"
+      })
+    ).toEqual({
+      q: "docker",
+      boardSlug: "devops",
+      tag: "compose",
+      status: ThreadStatus.Published,
+      sort: "latest"
+    });
+    expect(() => listThreadsQuerySchema.parse({ sort: "random" })).toThrow();
+  });
+
+  it("describes thread summaries with interaction metrics", () => {
+    const thread: ThreadSummary = {
+      id: "thread_1",
+      boardId: "board_1",
+      boardSlug: "devops",
+      boardName: "部署运维",
+      authorId: "user_1",
+      authorUsername: "alice",
+      title: "Docker Compose 依赖服务启动清单",
+      excerpt: "排查依赖服务启动顺序。",
+      status: ThreadStatus.Published,
+      tags: ["docker"],
+      commentCount: 2,
+      reactionCount: 3,
+      bookmarkCount: 1,
+      viewCount: 42,
+      isPinned: true,
+      isLocked: false,
+      viewerHasReacted: false,
+      viewerHasBookmarked: true,
+      createdAt: "2026-06-04T00:00:00.000Z",
+      updatedAt: "2026-06-04T00:00:00.000Z"
+    };
+
+    expect(thread.commentCount).toBe(2);
+    expect(thread.viewerHasBookmarked).toBe(true);
+  });
+});
+
+describe("community interaction schemas", () => {
+  it("validates report creation input", () => {
+    expect(
+      createReportSchema.parse({
+        targetType: "thread",
+        targetId: "thread_1",
+        reason: ReportReason.Spam,
+        detail: "重复广告"
+      })
+    ).toEqual({
+      targetType: "thread",
+      targetId: "thread_1",
+      reason: ReportReason.Spam,
+      detail: "重复广告"
+    });
+    expect(() => createReportSchema.parse({ targetType: "thread", targetId: "", reason: "unknown" })).toThrow();
+  });
+
+  it("validates direct message input", () => {
+    expect(createConversationMessageSchema.parse({ recipientId: "user_2", body: "你好" })).toEqual({
+      recipientId: "user_2",
+      body: "你好"
+    });
+    expect(() => createConversationMessageSchema.parse({ recipientId: "user_2", body: "" })).toThrow();
+  });
+
+  it("describes notifications, conversations, tags, profiles and admin dashboard data", () => {
+    const notification: NotificationSummary = {
+      id: "notice_1",
+      type: "comment",
+      title: "有新的评论",
+      body: "bob 评论了你的主题。",
+      isRead: false,
+      createdAt: "2026-06-04T00:00:00.000Z"
+    };
+    const conversation: ConversationSummary = {
+      id: "conversation_1",
+      participantId: "user_2",
+      participantUsername: "bob",
+      lastMessageBody: "收到",
+      unreadCount: 1,
+      updatedAt: "2026-06-04T00:00:00.000Z"
+    };
+    const tag: TagSummary = {
+      id: "tag_docker",
+      name: "docker",
+      description: "容器和编排",
+      status: "active",
+      threadCount: 4
+    };
+    const profile: UserProfileSummary = {
+      id: "user_1",
+      username: "alice",
+      role: UserRole.User,
+      status: UserStatus.Active,
+      threadCount: 3,
+      commentCount: 8,
+      followerCount: 2,
+      followingCount: 1,
+      viewerIsFollowing: false,
+      createdAt: "2026-06-04T00:00:00.000Z"
+    };
+    const dashboard: AdminDashboardSummary = {
+      userCount: 3,
+      threadCount: 5,
+      commentCount: 8,
+      openReportCount: 2,
+      pendingReviewCount: 1
+    };
+
+    expect(notification.isRead).toBe(false);
+    expect(conversation.unreadCount).toBe(1);
+    expect(tag.threadCount).toBe(4);
+    expect(profile.viewerIsFollowing).toBe(false);
+    expect(dashboard.openReportCount).toBe(2);
+  });
+});
+
+describe("admin schemas", () => {
+  it("validates moderation actions", () => {
+    expect(moderationActionSchema.parse({ action: "hide", note: "违规内容" })).toEqual({
+      action: "hide",
+      note: "违规内容"
+    });
+    expect(() => moderationActionSchema.parse({ action: "explode" })).toThrow();
+  });
+
+  it("exposes stable report statuses", () => {
+    expect(ReportStatus.Open).toBe("open");
+    expect(ReportStatus.Resolved).toBe("resolved");
   });
 });

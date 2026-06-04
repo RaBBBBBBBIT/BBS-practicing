@@ -40,6 +40,14 @@ const threads: ThreadSummary[] = [
     excerpt: "想整理一下 NestJS API 的错误边界。",
     status: ThreadStatus.Published,
     tags: ["api"],
+    commentCount: 1,
+    reactionCount: 2,
+    bookmarkCount: 0,
+    viewCount: 64,
+    isPinned: false,
+    isLocked: false,
+    viewerHasReacted: false,
+    viewerHasBookmarked: false,
     createdAt: "2026-06-03T08:15:00.000Z",
     updatedAt: "2026-06-03T08:15:00.000Z"
   }

@@ -17,6 +17,14 @@ model User {
   sessions     Session[]
   threads      Thread[]
   comments     Comment[]
+  reactions    Reaction[]
+  bookmarks    Bookmark[]
+  following    Follow[]   @relation("Follower")
+  followers    Follow[]   @relation("Following")
+  notifications Notification[]
+  sentMessages Message[]  @relation("MessageSender")
+  reports      Report[]   @relation("ReportReporter")
+  auditLogs    AuditLog[] @relation("AuditActor")
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 }
@@ -52,6 +60,12 @@ model Thread {
   status    ThreadStatus @default(PUBLISHED)
   tags      String[]     @default([])
   comments  Comment[]
+  reactions Reaction[]
+  bookmarks Bookmark[]
+  reports   Report[]
+  isPinned  Boolean      @default(false)
+  isLocked  Boolean      @default(false)
+  viewCount Int          @default(0)
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
 }
@@ -64,8 +78,112 @@ model Comment {
   author    User     @relation(fields: [authorId], references: [id])
   parentId  String?
   body      String
+  reports   Report[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Reaction {
+  id        String   @id @default(cuid())
+  threadId  String
+  thread    Thread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([threadId, userId])
+}
+
+model Bookmark {
+  id        String   @id @default(cuid())
+  threadId  String
+  thread    Thread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([threadId, userId])
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  follower    User     @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String
+  following   User     @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  body      String
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+}
+
+model Conversation {
+  id        String    @id @default(cuid())
+  userAId   String
+  userBId   String
+  messages  Message[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([userAId, userBId])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  body           String
+  createdAt      DateTime     @default(now())
+}
+
+model Report {
+  id          String       @id @default(cuid())
+  targetType  ReportTarget
+  threadId    String?
+  thread      Thread?      @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  commentId   String?
+  comment     Comment?     @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  reporterId  String
+  reporter    User         @relation("ReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  reason      ReportReason
+  detail      String?
+  status      ReportStatus @default(OPEN)
+  resolvedAt  DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String
+  actor     User     @relation("AuditActor", fields: [actorId], references: [id], onDelete: Cascade)
+  action    String
+  targetType String
+  targetId   String
+  note      String?
+  createdAt DateTime @default(now())
+}
+
+model Tag {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String    @default("")
+  status      TagStatus @default(ACTIVE)
+  threadCount Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 enum UserRole {
@@ -90,4 +208,36 @@ enum ThreadStatus {
   PUBLISHED
   HIDDEN
   DELETED
+}
+
+enum NotificationType {
+  COMMENT
+  REACTION
+  FOLLOW
+  REPORT
+  MODERATION
+  MESSAGE
+}
+
+enum ReportTarget {
+  THREAD
+  COMMENT
+}
+
+enum ReportReason {
+  SPAM
+  HARASSMENT
+  ILLEGAL
+  OTHER
+}
+
+enum ReportStatus {
+  OPEN
+  RESOLVED
+  REJECTED
+}
+
+enum TagStatus {
+  ACTIVE
+  DISABLED
 }

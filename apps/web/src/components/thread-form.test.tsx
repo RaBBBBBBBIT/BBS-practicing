@@ -13,6 +13,14 @@ const thread: ThreadSummary = {
   excerpt: "讨论异常过滤器和错误码。",
   status: ThreadStatus.Published,
   tags: ["api"],
+  commentCount: 0,
+  reactionCount: 0,
+  bookmarkCount: 0,
+  viewCount: 0,
+  isPinned: false,
+  isLocked: false,
+  viewerHasReacted: false,
+  viewerHasBookmarked: false,
   createdAt: "2026-06-03T08:15:00.000Z",
   updatedAt: "2026-06-03T08:15:00.000Z"
 };
