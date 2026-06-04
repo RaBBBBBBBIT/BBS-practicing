@@ -18,12 +18,12 @@
 - Modify: `packages/shared/src/index.ts`
 - Modify: `packages/shared/src/index.test.ts`
 
-- [ ] 写失败测试：新增搜索输入、互动 DTO、通知 DTO、私信 DTO、举报 DTO、后台 DTO。
-- [ ] 扩展 Prisma 模型：`Reaction`、`Bookmark`、`Follow`、`Notification`、`Conversation`、`Message`、`Report`、`AuditLog`、`Tag`，并扩展 `Thread` 状态字段。
-- [ ] 生成 migration，确保现有数据可迁移。
-- [ ] 实现 shared schema 和 DTO。
-- [ ] 运行 `pnpm --filter @bbs/shared test`、`pnpm --filter @bbs/shared build`、`pnpm --filter api prisma:validate`。
-- [ ] 提交：`数据：扩展社区业务模型`。
+- [x] 写失败测试：新增搜索输入、互动 DTO、通知 DTO、私信 DTO、举报 DTO、后台 DTO。
+- [x] 扩展 Prisma 模型：`Reaction`、`Bookmark`、`Follow`、`Notification`、`Conversation`、`Message`、`Report`、`AuditLog`、`Tag`，并扩展 `Thread` 状态字段。
+- [x] 生成 migration，确保现有数据可迁移。
+- [x] 实现 shared schema 和 DTO。
+- [x] 运行 `pnpm --filter @bbs/shared test`、`pnpm --filter @bbs/shared build`、`pnpm --filter api prisma:validate`。
+- [x] 提交：`数据：扩展社区业务模型`。
 
 ## Task 2: 搜索、筛选和主题管理 API
 
@@ -32,12 +32,12 @@
 - Modify: `apps/api/src/threads/threads.service.ts`
 - Modify: `apps/api/test/threads.e2e-spec.ts`
 
-- [ ] 写失败 e2e：关键词、标签、状态、排序筛选。
-- [ ] 写失败 e2e：作者编辑自己的主题。
-- [ ] 写失败 e2e：管理员隐藏、恢复、置顶、锁定主题。
-- [ ] 实现查询参数 schema、服务查询和管理操作。
-- [ ] 运行 API threads e2e、typecheck、build、lint。
-- [ ] 提交：`功能：补齐主题搜索和管理`。
+- [x] 写失败 e2e：关键词、标签、状态、排序筛选。
+- [x] 写失败 e2e：作者编辑自己的主题。
+- [x] 写失败 e2e：管理员隐藏、恢复、置顶、锁定主题。
+- [x] 实现查询参数 schema、服务查询和管理操作。
+- [x] 运行 API threads e2e、typecheck、build、lint。
+- [x] 提交：`功能：补齐主题搜索和管理`。
 
 ## Task 3: 互动、关注、通知、私信、举报 API
 

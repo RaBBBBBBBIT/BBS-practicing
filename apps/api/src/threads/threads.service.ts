@@ -1,13 +1,17 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { BoardStatus as PrismaBoardStatus, ThreadStatus as PrismaThreadStatus } from "@prisma/client";
 import {
   ThreadStatus,
   type CommentSummary,
   type CreateCommentInput,
   type CreateThreadInput,
+  type ListThreadsQuery,
+  type ModerationActionInput,
   type PublicUser,
   type ThreadDetail,
-  type ThreadSummary
+  type ThreadSummary,
+  type UpdateThreadInput,
+  UserRole
 } from "@bbs/shared";
 import { PrismaService } from "../prisma/prisma.service.js";
 
@@ -52,13 +56,24 @@ export class ThreadsService {
     return this.toThreadSummary(thread);
   }
 
-  async listThreads(options: { boardSlug?: string } = {}): Promise<ThreadSummary[]> {
+  async listThreads(options: ListThreadsQuery): Promise<ThreadSummary[]> {
+    const status = options.status ? this.toPrismaStatus(options.status) : PrismaThreadStatus.PUBLISHED;
     const threads = await this.prisma.thread.findMany({
       where: {
-        status: PrismaThreadStatus.PUBLISHED,
-        ...(options.boardSlug ? { board: { slug: options.boardSlug } } : {})
+        status,
+        ...(options.boardSlug ? { board: { slug: options.boardSlug } } : {}),
+        ...(options.tag ? { tags: { has: options.tag } } : {}),
+        ...(options.q
+          ? {
+              OR: [
+                { title: { contains: options.q, mode: "insensitive" } },
+                { body: { contains: options.q, mode: "insensitive" } },
+                { author: { username: { contains: options.q, mode: "insensitive" } } }
+              ]
+            }
+          : {})
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: this.toThreadOrderBy(options.sort),
       include: {
         board: true,
         author: true,
@@ -73,6 +88,99 @@ export class ThreadsService {
     });
 
     return threads.map((thread) => this.toThreadSummary(thread));
+  }
+
+  async updateThread(threadId: string, input: UpdateThreadInput, user: PublicUser): Promise<ThreadDetail> {
+    const existingThread = await this.prisma.thread.findUnique({
+      where: { id: threadId },
+      select: { authorId: true }
+    });
+
+    if (!existingThread) {
+      throw new NotFoundException("Thread not found");
+    }
+
+    if (existingThread.authorId !== user.id && !this.canModerate(user)) {
+      throw new ForbiddenException("You cannot edit this thread");
+    }
+
+    await this.prisma.thread.update({
+      where: { id: threadId },
+      data: {
+        ...(input.title ? { title: input.title } : {}),
+        ...(input.body ? { body: input.body } : {}),
+        ...(input.tags ? { tags: input.tags } : {})
+      }
+    });
+
+    return this.getThreadForManagement(threadId);
+  }
+
+  async moderateThread(threadId: string, input: ModerationActionInput, user: PublicUser): Promise<ThreadDetail> {
+    if (!this.canModerate(user)) {
+      throw new ForbiddenException("You cannot moderate threads");
+    }
+
+    const thread = await this.prisma.thread.findUnique({
+      where: { id: threadId },
+      select: { id: true }
+    });
+
+    if (!thread) {
+      throw new NotFoundException("Thread not found");
+    }
+
+    const data: Partial<{
+      status: PrismaThreadStatus;
+      isPinned: boolean;
+      isLocked: boolean;
+    }> = {};
+
+    if (input.action === "hide") {
+      data.status = PrismaThreadStatus.HIDDEN;
+    }
+
+    if (input.action === "restore") {
+      data.status = PrismaThreadStatus.PUBLISHED;
+    }
+
+    if (input.action === "pin") {
+      data.isPinned = true;
+    }
+
+    if (input.action === "unpin") {
+      data.isPinned = false;
+    }
+
+    if (input.action === "lock") {
+      data.isLocked = true;
+    }
+
+    if (input.action === "unlock") {
+      data.isLocked = false;
+    }
+
+    if (Object.keys(data).length === 0) {
+      throw new BadRequestException("Unsupported thread moderation action");
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.thread.update({
+        where: { id: threadId },
+        data
+      }),
+      this.prisma.auditLog.create({
+        data: {
+          actorId: user.id,
+          action: input.action,
+          targetType: "thread",
+          targetId: threadId,
+          note: input.note ?? null
+        }
+      })
+    ]);
+
+    return this.getThreadForManagement(threadId);
   }
 
   async getPublishedThread(id: string): Promise<ThreadDetail> {
@@ -143,6 +251,36 @@ export class ThreadsService {
     });
 
     return this.toCommentSummary(comment);
+  }
+
+  private async getThreadForManagement(id: string): Promise<ThreadDetail> {
+    const thread = await this.prisma.thread.findUnique({
+      where: { id },
+      include: {
+        board: true,
+        author: true,
+        _count: {
+          select: {
+            comments: true,
+            reactions: true,
+            bookmarks: true
+          }
+        },
+        comments: {
+          where: { parentId: null },
+          orderBy: { createdAt: "asc" },
+          include: {
+            author: true
+          }
+        }
+      }
+    });
+
+    if (!thread) {
+      throw new NotFoundException("Thread not found");
+    }
+
+    return this.toThreadDetail(thread);
   }
 
   private toThreadSummary(thread: {
@@ -273,5 +411,36 @@ export class ThreadsService {
     };
 
     return statuses[status];
+  }
+
+  private toPrismaStatus(status: ThreadStatus): PrismaThreadStatus {
+    const statuses: Record<ThreadStatus, PrismaThreadStatus> = {
+      [ThreadStatus.Draft]: PrismaThreadStatus.DRAFT,
+      [ThreadStatus.Published]: PrismaThreadStatus.PUBLISHED,
+      [ThreadStatus.Hidden]: PrismaThreadStatus.HIDDEN,
+      [ThreadStatus.Deleted]: PrismaThreadStatus.DELETED
+    };
+
+    return statuses[status];
+  }
+
+  private toThreadOrderBy(sort: ListThreadsQuery["sort"]): Array<Record<string, "asc" | "desc">> {
+    if (sort === "oldest") {
+      return [{ createdAt: "asc" }];
+    }
+
+    if (sort === "popular") {
+      return [{ viewCount: "desc" }, { createdAt: "desc" }];
+    }
+
+    if (sort === "latest") {
+      return [{ createdAt: "desc" }];
+    }
+
+    return [{ isPinned: "desc" }, { updatedAt: "desc" }, { createdAt: "desc" }];
+  }
+
+  private canModerate(user: PublicUser): boolean {
+    return user.role === UserRole.Admin || user.role === UserRole.Moderator;
   }
 }

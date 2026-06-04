@@ -193,6 +193,111 @@ describe("threads API", () => {
     );
   });
 
+  it("searches and filters published threads by keyword and tag", async () => {
+    await prisma.user.create({
+      data: {
+        id: "user_threads_search_author",
+        email: "search-author@example.com",
+        username: "search-author",
+        passwordHash: "not-used-in-this-test"
+      }
+    });
+    await prisma.thread.createMany({
+      data: [
+        {
+          boardId: "board_threads_backend",
+          authorId: "user_threads_search_author",
+          title: "Docker Compose startup checklist",
+          body: "This thread talks about compose dependencies and container health checks.",
+          status: PrismaThreadStatus.PUBLISHED,
+          tags: ["docker", "compose"]
+        },
+        {
+          boardId: "board_threads_backend",
+          authorId: "user_threads_search_author",
+          title: "NestJS provider boundaries",
+          body: "This thread should not match docker search.",
+          status: PrismaThreadStatus.PUBLISHED,
+          tags: ["nestjs"]
+        }
+      ]
+    });
+
+    const response = await request(app.getHttpServer())
+      .get("/api/threads")
+      .query({ q: "compose", tag: "docker", sort: "latest" })
+      .expect(200);
+
+    expect(response.body.threads).toHaveLength(1);
+    expect(response.body.threads[0]).toEqual(
+      expect.objectContaining({
+        title: "Docker Compose startup checklist",
+        tags: ["docker", "compose"]
+      })
+    );
+  });
+
+  it("sorts published threads by popularity", async () => {
+    await prisma.user.create({
+      data: {
+        id: "user_threads_popular_author",
+        email: "popular-author@example.com",
+        username: "popular-author",
+        passwordHash: "not-used-in-this-test"
+      }
+    });
+    const quietThread = await prisma.thread.create({
+      data: {
+        id: "thread_quiet",
+        boardId: "board_threads_backend",
+        authorId: "user_threads_popular_author",
+        title: "Quiet thread",
+        body: "This thread has less engagement.",
+        status: PrismaThreadStatus.PUBLISHED
+      }
+    });
+    const popularThread = await prisma.thread.create({
+      data: {
+        id: "thread_popular",
+        boardId: "board_threads_backend",
+        authorId: "user_threads_popular_author",
+        title: "Popular thread",
+        body: "This thread has more engagement.",
+        status: PrismaThreadStatus.PUBLISHED,
+        viewCount: 99
+      }
+    });
+    await prisma.user.createMany({
+      data: [
+        { id: "user_reactor_1", email: "reactor1@example.com", username: "reactor1", passwordHash: "not-used" },
+        { id: "user_reactor_2", email: "reactor2@example.com", username: "reactor2", passwordHash: "not-used" }
+      ]
+    });
+    await prisma.reaction.createMany({
+      data: [
+        { threadId: popularThread.id, userId: "user_reactor_1" },
+        { threadId: popularThread.id, userId: "user_reactor_2" }
+      ]
+    });
+    await prisma.comment.create({
+      data: {
+        threadId: quietThread.id,
+        authorId: "user_threads_popular_author",
+        body: "Quiet comment"
+      }
+    });
+
+    const response = await request(app.getHttpServer()).get("/api/threads").query({ sort: "popular" }).expect(200);
+
+    expect(response.body.threads.map((thread: { id: string }) => thread.id)).toEqual(["thread_popular", "thread_quiet"]);
+    expect(response.body.threads[0]).toEqual(
+      expect.objectContaining({
+        reactionCount: 2,
+        viewCount: 99
+      })
+    );
+  });
+
   it("returns published thread details", async () => {
     await prisma.user.create({
       data: {
@@ -345,6 +450,96 @@ describe("threads API", () => {
 
     await request(app.getHttpServer()).get("/api/threads/thread_detail_hidden").expect(404);
     await request(app.getHttpServer()).get("/api/threads/thread_detail_missing").expect(404);
+  });
+
+  it("lets authors edit their own published threads", async () => {
+    const agent = request.agent(app.getHttpServer());
+    const registerResponse = await agent.post("/api/auth/register").send({
+      email: "editor@example.com",
+      username: "editor",
+      password: "password123"
+    });
+    const thread = await prisma.thread.create({
+      data: {
+        id: "thread_author_edit",
+        boardId: "board_threads_backend",
+        authorId: registerResponse.body.user.id,
+        title: "Original editable title",
+        body: "Original body for an editable thread.",
+        status: PrismaThreadStatus.PUBLISHED,
+        tags: ["original"]
+      }
+    });
+
+    const response = await agent
+      .patch(`/api/threads/${thread.id}`)
+      .send({
+        title: "Updated editable title",
+        body: "Updated body for the editable thread.",
+        tags: ["updated", "api"]
+      })
+      .expect(200);
+
+    expect(response.body.thread).toEqual(
+      expect.objectContaining({
+        id: thread.id,
+        title: "Updated editable title",
+        body: "Updated body for the editable thread.",
+        tags: ["updated", "api"]
+      })
+    );
+  });
+
+  it("lets admins moderate thread visibility and state", async () => {
+    const agent = request.agent(app.getHttpServer());
+    const adminResponse = await agent.post("/api/auth/register").send({
+      email: "threads-admin@example.com",
+      username: "threads-admin",
+      password: "password123"
+    });
+    await prisma.user.update({
+      where: { id: adminResponse.body.user.id },
+      data: { role: "ADMIN" }
+    });
+    await prisma.user.create({
+      data: {
+        id: "user_threads_admin_author",
+        email: "admin-author@example.com",
+        username: "admin-author",
+        passwordHash: "not-used-in-this-test"
+      }
+    });
+    const thread = await prisma.thread.create({
+      data: {
+        id: "thread_admin_moderate",
+        boardId: "board_threads_backend",
+        authorId: "user_threads_admin_author",
+        title: "Thread needing moderation",
+        body: "This thread will be hidden, pinned and locked by an admin.",
+        status: PrismaThreadStatus.PUBLISHED
+      }
+    });
+
+    const response = await agent
+      .post(`/api/threads/${thread.id}/moderation`)
+      .send({ action: "hide", note: "违规内容" })
+      .expect(201);
+
+    expect(response.body.thread).toEqual(
+      expect.objectContaining({
+        id: thread.id,
+        status: "hidden"
+      })
+    );
+
+    const pinned = await agent.post(`/api/threads/${thread.id}/moderation`).send({ action: "pin" }).expect(201);
+    expect(pinned.body.thread.isPinned).toBe(true);
+
+    const locked = await agent.post(`/api/threads/${thread.id}/moderation`).send({ action: "lock" }).expect(201);
+    expect(locked.body.thread.isLocked).toBe(true);
+
+    const auditLogs = await prisma.auditLog.findMany({ where: { targetId: thread.id }, orderBy: { createdAt: "asc" } });
+    expect(auditLogs.map((log) => log.action)).toEqual(["hide", "pin", "lock"]);
   });
 
   it("requires authentication to create a comment", async () => {

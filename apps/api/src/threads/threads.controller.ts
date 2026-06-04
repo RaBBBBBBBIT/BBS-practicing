@@ -1,13 +1,19 @@
-import { Body, Controller, Get, Inject, Param, Post, Query, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Inject, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
 import {
   createCommentSchema,
   createThreadSchema,
+  listThreadsQuerySchema,
+  moderationActionSchema,
+  updateThreadSchema,
   type CommentSummary,
   type CreateCommentInput,
   type CreateThreadInput,
+  type ListThreadsQuery,
+  type ModerationActionInput,
   type PublicUser,
   type ThreadDetail,
-  type ThreadSummary
+  type ThreadSummary,
+  type UpdateThreadInput
 } from "@bbs/shared";
 import { CurrentUser } from "../auth/current-user.decorator.js";
 import { SessionGuard } from "../auth/session.guard.js";
@@ -46,9 +52,33 @@ export class ThreadsController {
   }
 
   @Get()
-  async listThreads(@Query("boardSlug") boardSlug?: string): Promise<ThreadsResponse> {
+  async listThreads(@Query(new ZodValidationPipe(listThreadsQuerySchema)) query: ListThreadsQuery): Promise<ThreadsResponse> {
     return {
-      threads: await this.threadsService.listThreads(boardSlug ? { boardSlug } : {})
+      threads: await this.threadsService.listThreads(query)
+    };
+  }
+
+  @Patch(":id")
+  @UseGuards(SessionGuard)
+  async updateThread(
+    @Param("id") id: string,
+    @Body(new ZodValidationPipe(updateThreadSchema)) input: UpdateThreadInput,
+    @CurrentUser() user: PublicUser
+  ): Promise<ThreadDetailResponse> {
+    return {
+      thread: await this.threadsService.updateThread(id, input, user)
+    };
+  }
+
+  @Post(":id/moderation")
+  @UseGuards(SessionGuard)
+  async moderateThread(
+    @Param("id") id: string,
+    @Body(new ZodValidationPipe(moderationActionSchema)) input: ModerationActionInput,
+    @CurrentUser() user: PublicUser
+  ): Promise<ThreadDetailResponse> {
+    return {
+      thread: await this.threadsService.moderateThread(id, input, user)
     };
   }
 
