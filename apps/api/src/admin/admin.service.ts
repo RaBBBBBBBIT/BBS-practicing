@@ -162,6 +162,22 @@ export class AdminService {
     return this.toAdminUserSummary(updatedUser);
   }
 
+  async listUsers(): Promise<AdminUserSummary[]> {
+    const users = await this.prisma.user.findMany({
+      orderBy: { createdAt: "asc" },
+      include: {
+        _count: {
+          select: {
+            threads: true,
+            comments: true
+          }
+        }
+      }
+    });
+
+    return users.map((user) => this.toAdminUserSummary(user));
+  }
+
   async listBoards(): Promise<BoardSummary[]> {
     const boards = await this.prisma.board.findMany({
       orderBy: { name: "asc" },

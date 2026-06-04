@@ -176,6 +176,9 @@ describe("admin API", () => {
         status: "muted"
       })
     );
+
+    const users = await agent.get("/api/admin/users").expect(200);
+    expect(users.body.users).toEqual(expect.arrayContaining([expect.objectContaining({ id: "user_admin_managed" })]));
   });
 
   it("creates and updates boards", async () => {

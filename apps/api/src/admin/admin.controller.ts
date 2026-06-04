@@ -110,6 +110,13 @@ export class AdminController {
     };
   }
 
+  @Get("users")
+  async listUsers(): Promise<{ users: AdminUserSummary[] }> {
+    return {
+      users: await this.adminService.listUsers()
+    };
+  }
+
   @Get("boards")
   async listBoards(): Promise<BoardsResponse> {
     return {
