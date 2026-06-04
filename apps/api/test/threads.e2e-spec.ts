@@ -232,6 +232,97 @@ describe("threads API", () => {
     );
   });
 
+  it("returns top-level comments with published thread details ordered by creation time", async () => {
+    await prisma.user.createMany({
+      data: [
+        {
+          id: "user_threads_comment_thread_author",
+          email: "comment-thread-author@example.com",
+          username: "comment-thread-author",
+          passwordHash: "not-used-in-this-test"
+        },
+        {
+          id: "user_threads_commenter_one",
+          email: "commenter-one@example.com",
+          username: "commenter-one",
+          passwordHash: "not-used-in-this-test"
+        },
+        {
+          id: "user_threads_commenter_two",
+          email: "commenter-two@example.com",
+          username: "commenter-two",
+          passwordHash: "not-used-in-this-test"
+        }
+      ]
+    });
+    const thread = await prisma.thread.create({
+      data: {
+        id: "thread_detail_with_comments",
+        boardId: "board_threads_backend",
+        authorId: "user_threads_comment_thread_author",
+        title: "Published detail with comments",
+        body: "The detail endpoint should include top-level comments for this published thread.",
+        status: PrismaThreadStatus.PUBLISHED
+      }
+    });
+    await prisma.comment.createMany({
+      data: [
+        {
+          id: "comment_detail_later",
+          threadId: thread.id,
+          authorId: "user_threads_commenter_two",
+          parentId: null,
+          body: "This newer top-level comment should be second.",
+          createdAt: new Date("2026-01-03T00:00:00.000Z"),
+          updatedAt: new Date("2026-01-03T00:00:00.000Z")
+        },
+        {
+          id: "comment_detail_reply",
+          threadId: thread.id,
+          authorId: "user_threads_commenter_two",
+          parentId: "comment_detail_earlier",
+          body: "This reply should not appear in the top-level detail comments.",
+          createdAt: new Date("2026-01-02T00:00:00.000Z"),
+          updatedAt: new Date("2026-01-02T00:00:00.000Z")
+        },
+        {
+          id: "comment_detail_earlier",
+          threadId: thread.id,
+          authorId: "user_threads_commenter_one",
+          parentId: null,
+          body: "This older top-level comment should be first.",
+          createdAt: new Date("2026-01-01T00:00:00.000Z"),
+          updatedAt: new Date("2026-01-01T00:00:00.000Z")
+        }
+      ]
+    });
+
+    const response = await request(app.getHttpServer()).get(`/api/threads/${thread.id}`).expect(200);
+
+    expect(response.body.thread.comments).toEqual([
+      {
+        id: "comment_detail_earlier",
+        threadId: thread.id,
+        authorId: "user_threads_commenter_one",
+        authorUsername: "commenter-one",
+        parentId: null,
+        body: "This older top-level comment should be first.",
+        createdAt: "2026-01-01T00:00:00.000Z",
+        updatedAt: "2026-01-01T00:00:00.000Z"
+      },
+      {
+        id: "comment_detail_later",
+        threadId: thread.id,
+        authorId: "user_threads_commenter_two",
+        authorUsername: "commenter-two",
+        parentId: null,
+        body: "This newer top-level comment should be second.",
+        createdAt: "2026-01-03T00:00:00.000Z",
+        updatedAt: "2026-01-03T00:00:00.000Z"
+      }
+    ]);
+  });
+
   it("does not return non-published thread details", async () => {
     await prisma.user.create({
       data: {
@@ -254,6 +345,125 @@ describe("threads API", () => {
 
     await request(app.getHttpServer()).get("/api/threads/thread_detail_hidden").expect(404);
     await request(app.getHttpServer()).get("/api/threads/thread_detail_missing").expect(404);
+  });
+
+  it("requires authentication to create a comment", async () => {
+    await prisma.user.create({
+      data: {
+        id: "user_threads_unauth_comment_author",
+        email: "unauth-comment-author@example.com",
+        username: "unauth-comment-author",
+        passwordHash: "not-used-in-this-test"
+      }
+    });
+    const thread = await prisma.thread.create({
+      data: {
+        id: "thread_comment_requires_auth",
+        boardId: "board_threads_backend",
+        authorId: "user_threads_unauth_comment_author",
+        title: "Comment auth contract",
+        body: "Creating comments should require an authenticated user.",
+        status: PrismaThreadStatus.PUBLISHED
+      }
+    });
+
+    await request(app.getHttpServer())
+      .post(`/api/threads/${thread.id}/comments`)
+      .send({ body: "This comment should be rejected without a session." })
+      .expect(401);
+  });
+
+  it("validates comment input", async () => {
+    const agent = request.agent(app.getHttpServer());
+    const registerResponse = await agent.post("/api/auth/register").send({
+      email: "invalid-commenter@example.com",
+      username: "invalid-commenter",
+      password: "password123"
+    });
+    const thread = await prisma.thread.create({
+      data: {
+        id: "thread_comment_validation",
+        boardId: "board_threads_backend",
+        authorId: registerResponse.body.user.id,
+        title: "Comment validation contract",
+        body: "Creating comments should reject invalid request bodies.",
+        status: PrismaThreadStatus.PUBLISHED
+      }
+    });
+
+    await agent.post(`/api/threads/${thread.id}/comments`).send({ body: "" }).expect(400);
+  });
+
+  it("creates a comment on a published thread and updates the thread timestamp", async () => {
+    const agent = request.agent(app.getHttpServer());
+    const registerResponse = await agent.post("/api/auth/register").send({
+      email: "commenter@example.com",
+      username: "commenter",
+      password: "password123"
+    });
+    const originalUpdatedAt = new Date("2026-01-01T00:00:00.000Z");
+    const thread = await prisma.thread.create({
+      data: {
+        id: "thread_create_comment",
+        boardId: "board_threads_backend",
+        authorId: registerResponse.body.user.id,
+        title: "Create comment contract",
+        body: "Creating a comment should return the new comment summary.",
+        status: PrismaThreadStatus.PUBLISHED,
+        createdAt: originalUpdatedAt,
+        updatedAt: originalUpdatedAt
+      }
+    });
+
+    const response = await agent
+      .post(`/api/threads/${thread.id}/comments`)
+      .send({ body: "This is the first top-level comment." })
+      .expect(201);
+
+    expect(response.body.comment).toEqual({
+      id: expect.any(String),
+      threadId: thread.id,
+      authorId: registerResponse.body.user.id,
+      authorUsername: "commenter",
+      parentId: null,
+      body: "This is the first top-level comment.",
+      createdAt: expect.any(String),
+      updatedAt: expect.any(String)
+    });
+
+    const updatedThread = await prisma.thread.findUniqueOrThrow({
+      where: { id: thread.id },
+      select: { updatedAt: true }
+    });
+    expect(updatedThread.updatedAt.getTime()).toBeGreaterThan(originalUpdatedAt.getTime());
+  });
+
+  it("does not create comments on missing or non-published threads", async () => {
+    const agent = request.agent(app.getHttpServer());
+    const registerResponse = await agent.post("/api/auth/register").send({
+      email: "hidden-commenter@example.com",
+      username: "hidden-commenter",
+      password: "password123"
+    });
+    await prisma.thread.create({
+      data: {
+        id: "thread_hidden_comment_target",
+        boardId: "board_threads_backend",
+        authorId: registerResponse.body.user.id,
+        title: "Hidden comment target",
+        body: "Hidden threads should not accept new comments.",
+        status: PrismaThreadStatus.HIDDEN
+      }
+    });
+
+    await agent
+      .post("/api/threads/thread_missing_comment_target/comments")
+      .send({ body: "This missing thread should return not found." })
+      .expect(404);
+    await agent
+      .post("/api/threads/thread_hidden_comment_target/comments")
+      .send({ body: "This hidden thread should return not found." })
+      .expect(404);
   });
 
   it("rejects creating threads in closed boards", async () => {

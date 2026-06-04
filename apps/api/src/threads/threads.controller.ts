@@ -1,6 +1,9 @@
 import { Body, Controller, Get, Inject, Param, Post, Query, UseGuards } from "@nestjs/common";
 import {
+  createCommentSchema,
   createThreadSchema,
+  type CommentSummary,
+  type CreateCommentInput,
   type CreateThreadInput,
   type PublicUser,
   type ThreadDetail,
@@ -21,6 +24,10 @@ interface ThreadsResponse {
 
 interface ThreadDetailResponse {
   thread: ThreadDetail;
+}
+
+interface CommentResponse {
+  comment: CommentSummary;
 }
 
 @Controller("threads")
@@ -49,6 +56,18 @@ export class ThreadsController {
   async getThread(@Param("id") id: string): Promise<ThreadDetailResponse> {
     return {
       thread: await this.threadsService.getPublishedThread(id)
+    };
+  }
+
+  @Post(":id/comments")
+  @UseGuards(SessionGuard)
+  async createComment(
+    @Param("id") id: string,
+    @Body(new ZodValidationPipe(createCommentSchema)) input: CreateCommentInput,
+    @CurrentUser() user: PublicUser
+  ): Promise<CommentResponse> {
+    return {
+      comment: await this.threadsService.createComment(id, input, user)
     };
   }
 }

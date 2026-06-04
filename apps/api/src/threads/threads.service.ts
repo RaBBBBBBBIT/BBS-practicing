@@ -1,6 +1,14 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { BoardStatus as PrismaBoardStatus, ThreadStatus as PrismaThreadStatus } from "@prisma/client";
-import { ThreadStatus, type CreateThreadInput, type PublicUser, type ThreadDetail, type ThreadSummary } from "@bbs/shared";
+import {
+  ThreadStatus,
+  type CommentSummary,
+  type CreateCommentInput,
+  type CreateThreadInput,
+  type PublicUser,
+  type ThreadDetail,
+  type ThreadSummary
+} from "@bbs/shared";
 import { PrismaService } from "../prisma/prisma.service.js";
 
 @Injectable()
@@ -61,7 +69,14 @@ export class ThreadsService {
       },
       include: {
         board: true,
-        author: true
+        author: true,
+        comments: {
+          where: { parentId: null },
+          orderBy: { createdAt: "asc" },
+          include: {
+            author: true
+          }
+        }
       }
     });
 
@@ -70,6 +85,43 @@ export class ThreadsService {
     }
 
     return this.toThreadDetail(thread);
+  }
+
+  async createComment(threadId: string, input: CreateCommentInput, author: PublicUser): Promise<CommentSummary> {
+    const comment = await this.prisma.$transaction(async (tx) => {
+      const thread = await tx.thread.findFirst({
+        where: {
+          id: threadId,
+          status: PrismaThreadStatus.PUBLISHED
+        },
+        select: { id: true }
+      });
+
+      if (!thread) {
+        throw new NotFoundException("Thread not found");
+      }
+
+      const createdComment = await tx.comment.create({
+        data: {
+          threadId: thread.id,
+          authorId: author.id,
+          parentId: null,
+          body: input.body
+        },
+        include: {
+          author: true
+        }
+      });
+
+      await tx.thread.update({
+        where: { id: thread.id },
+        data: { updatedAt: new Date() }
+      });
+
+      return createdComment;
+    });
+
+    return this.toCommentSummary(comment);
   }
 
   private toThreadSummary(thread: {
@@ -111,6 +163,16 @@ export class ThreadsService {
     body: string;
     status: PrismaThreadStatus;
     tags: string[];
+    comments: Array<{
+      id: string;
+      threadId: string;
+      authorId: string;
+      author: { username: string };
+      parentId: string | null;
+      body: string;
+      createdAt: Date;
+      updatedAt: Date;
+    }>;
     createdAt: Date;
     updatedAt: Date;
   }): ThreadDetail {
@@ -125,8 +187,31 @@ export class ThreadsService {
       body: thread.body,
       status: this.toPublicStatus(thread.status),
       tags: thread.tags,
+      comments: thread.comments.map((comment) => this.toCommentSummary(comment)),
       createdAt: thread.createdAt.toISOString(),
       updatedAt: thread.updatedAt.toISOString()
+    };
+  }
+
+  private toCommentSummary(comment: {
+    id: string;
+    threadId: string;
+    authorId: string;
+    author: { username: string };
+    parentId: string | null;
+    body: string;
+    createdAt: Date;
+    updatedAt: Date;
+  }): CommentSummary {
+    return {
+      id: comment.id,
+      threadId: comment.threadId,
+      authorId: comment.authorId,
+      authorUsername: comment.author.username,
+      parentId: comment.parentId,
+      body: comment.body,
+      createdAt: comment.createdAt.toISOString(),
+      updatedAt: comment.updatedAt.toISOString()
     };
   }
 
