@@ -43,16 +43,25 @@ describe("HomePage", () => {
     vi.mocked(fetchThreads).mockResolvedValue(threads);
   });
 
-  it("renders boards, latest threads, and forum actions", async () => {
+  it("renders the GitHub-style discussion workbench", async () => {
     const html = renderToStaticMarkup(await HomePage());
 
     expect(fetchBoards).toHaveBeenCalledOnce();
     expect(fetchThreads).toHaveBeenCalledWith();
-    expect(html).toContain("开发者技术社区");
+    expect(html).toContain("开发者讨论工作台");
+    expect(html).toContain("搜索或跳转...");
+    expect(html).toContain("讨论");
+    expect(html).toContain("分区");
+    expect(html).toContain("发起讨论");
+    expect(html).toContain("排序：最近活跃");
+    expect(html).toContain("is:open");
+    expect(html).toContain("查看全部讨论");
     expect(html).toContain("后端开发");
     expect(html).toContain("/boards/backend");
     expect(html).toContain("如何设计 NestJS 模块边界");
     expect(html).toContain("/threads/thread_1");
+    expect(html).toContain("#1 由 alice");
+    expect(html).toContain("发起");
     expect(html).toContain("/login");
     expect(html).toContain("/register");
     expect(html).toContain("/threads/new");

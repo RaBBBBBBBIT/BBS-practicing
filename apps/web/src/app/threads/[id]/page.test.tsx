@@ -28,16 +28,34 @@ describe("ThreadDetailPage", () => {
     vi.mocked(fetchThread).mockResolvedValue(thread);
   });
 
-  it("renders title, metadata, tags, board link, and full body", async () => {
+  it("renders a GitHub-style discussion detail timeline", async () => {
     const html = renderToStaticMarkup(await ThreadDetailPage({ params: Promise.resolve({ id: "thread_1" }) }));
 
     expect(fetchThread).toHaveBeenCalledWith("thread_1");
+    expect(html).toContain("BBS 社区");
+    expect(html).toContain("搜索或跳转...");
+    expect(html).toContain("发起讨论");
+    expect(html).toContain("编辑");
+    expect(html).toContain("订阅");
     expect(html).toContain("API 错误处理实践");
+    expect(html).toContain("开放");
+    expect(html).toContain("待回复");
     expect(html).toContain("alice");
+    expect(html).toContain("发起了这条讨论");
     expect(html).toContain("后端开发");
     expect(html).toContain("/boards/backend");
-    expect(html).toContain("api");
+    expect(html).toContain("接口");
     expect(html).toContain("这里是完整的主题正文");
+    expect(html).toContain("评论时间线");
+    expect(html).toContain("comment-card");
+    expect(html).toContain("<code>docker compose ps</code>");
+    expect(html).toContain("登录后参与评论");
+    expect(html).toContain("分区");
+    expect(html).toContain("标签");
+    expect(html).toContain("参与者");
+    expect(html).toContain("创建时间");
+    expect(html).toContain("更新时间");
+    expect(html).not.toContain("Thread");
   });
 
   it("renders a stable unavailable state when the API cannot be reached", async () => {
@@ -45,6 +63,7 @@ describe("ThreadDetailPage", () => {
 
     const html = renderToStaticMarkup(await ThreadDetailPage({ params: Promise.resolve({ id: "thread_1" }) }));
 
+    expect(html).toContain("BBS 社区");
     expect(html).toContain("主题暂时不可用");
   });
 
@@ -53,6 +72,7 @@ describe("ThreadDetailPage", () => {
 
     const html = renderToStaticMarkup(await ThreadDetailPage({ params: Promise.resolve({ id: "missing" }) }));
 
+    expect(html).toContain("BBS 社区");
     expect(html).toContain("主题不存在");
   });
 });

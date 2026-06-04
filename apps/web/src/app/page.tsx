@@ -1,5 +1,7 @@
 import Link from "next/link";
 import type { BoardSummary, ThreadSummary } from "@bbs/shared";
+import { GlobalTopBar, CommunityTabs } from "../components/community-chrome";
+import { TagList } from "../components/tag-list";
 import { fetchBoards, fetchThreads } from "../lib/forum-api";
 import { formatThreadDate, getBoardHref, getThreadHref } from "../lib/forum-view-model";
 import { getHomePageCopy } from "../lib/home-copy";
@@ -13,115 +15,211 @@ export default async function HomePage() {
     const [boards, threads] = await Promise.all([fetchBoards(), fetchThreads()]);
 
     return (
-      <main className="page-shell">
-        <ForumHeader title={copy.title} subtitle={copy.subtitle} />
-        <section className="forum-layout" aria-label="论坛首页">
-          <aside className="sidebar" aria-label="分区列表">
-            <div className="section-heading">
-              <h2>分区</h2>
-              <span>{boards.length} 个</span>
-            </div>
-            <BoardList boards={boards} />
-          </aside>
-          <section className="content-area" aria-label="最新主题">
-            <div className="section-heading">
-              <h2>最新主题</h2>
-              <Link className="secondary-action" href="/threads/new">
-                发布主题
-              </Link>
-            </div>
-            <ThreadList threads={threads} />
+      <>
+        <GlobalTopBar />
+        <main className="page-shell discussion-shell">
+          <CommunityHeader title={copy.title} subtitle={copy.subtitle} badge={copy.badge} boards={boards} threads={threads} />
+          <WorkbenchToolbar />
+          <section className="discussion-layout" aria-label="开发者讨论工作台">
+            <CategorySidebar boards={boards} />
+            <section className="discussion-main" aria-label="讨论列表">
+              <div className="discussion-heading">
+                <h2>讨论</h2>
+                <span>{threads.length} 条开放讨论</span>
+              </div>
+              <ThreadList threads={threads} />
+            </section>
+            <CommunitySidebar boards={boards} threads={threads} />
           </section>
-        </section>
-      </main>
+        </main>
+      </>
     );
   } catch {
     return (
-      <main className="page-shell">
-        <ForumHeader title={copy.title} subtitle={copy.subtitle} />
-        <UnavailablePanel message="论坛数据暂时不可用" />
-      </main>
+      <>
+        <GlobalTopBar />
+        <main className="page-shell discussion-shell">
+          <CommunityHeader title={copy.title} subtitle={copy.subtitle} badge={copy.badge} boards={[]} threads={[]} />
+          <UnavailablePanel message="论坛数据暂时不可用" />
+        </main>
+      </>
     );
   }
 }
 
-function ForumHeader({ title, subtitle }: { title: string; subtitle: string }) {
+function CommunityHeader({
+  title,
+  subtitle,
+  badge,
+  boards,
+  threads
+}: {
+  title: string;
+  subtitle: string;
+  badge: string;
+  boards: BoardSummary[];
+  threads: ThreadSummary[];
+}) {
+  const labelCount = new Set(threads.flatMap((thread) => thread.tags)).size;
+
   return (
-    <header className="forum-header">
-      <div>
-        <p className="eyebrow">BBS Community</p>
-        <h1>{title}</h1>
-        <p>{subtitle}</p>
+    <header className="community-header">
+      <div className="community-title">
+        <span className="community-mark" aria-hidden="true">
+          #
+        </span>
+        <div>
+          <p>{badge}</p>
+          <h1>{title}</h1>
+        </div>
+        <span className="visibility-badge">公开</span>
       </div>
-      <nav className="header-actions" aria-label="用户操作">
-        <Link href="/login">登录</Link>
-        <Link href="/register">注册</Link>
-        <Link className="primary-action" href="/threads/new">
-          发帖
-        </Link>
-      </nav>
+      <p>{subtitle}</p>
+      <CommunityTabs active="overview" />
+      <div className="community-stats" aria-label="社区统计">
+        <span>{threads.length} 条讨论</span>
+        <span>{boards.length} 个分区</span>
+        <span>{labelCount} 个标签</span>
+      </div>
     </header>
   );
 }
 
-function BoardList({ boards }: { boards: BoardSummary[] }) {
+function WorkbenchToolbar() {
+  return (
+    <section className="discussion-toolbar" aria-label="讨论筛选工具栏">
+      <label className="discussion-search">
+        <span className="sr-only">筛选讨论</span>
+        <input type="search" defaultValue="is:open" />
+      </label>
+      <div className="filter-actions">
+        <button className="toolbar-button" type="button">
+          排序：最近活跃
+        </button>
+        <button className="toolbar-button" type="button">
+          标签
+        </button>
+        <button className="toolbar-button" type="button">
+          分区
+        </button>
+        <Link className="primary-action" href="/threads/new">
+          发起讨论
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+function CategorySidebar({ boards }: { boards: BoardSummary[] }) {
   if (boards.length === 0) {
     return <p className="empty-state">暂无分区。</p>;
   }
 
+  const totalThreadCount = boards.reduce((total, board) => total + board.threadCount, 0);
+
   return (
-    <ul className="board-list">
-      {boards.map((board) => (
-        <li key={board.id}>
-          <Link href={getBoardHref(board)}>
+    <aside className="category-sidebar" id="categories" aria-label="分区">
+      <h2>分区</h2>
+      <nav className="category-list" aria-label="讨论分区">
+        <Link className="category-item is-active" href="/">
+          <span className="category-dot category-all" aria-hidden="true" />
+          <span>查看全部讨论</span>
+          <small>{totalThreadCount}</small>
+        </Link>
+        {boards.map((board) => (
+          <Link className="category-item" key={board.id} href={getBoardHref(board)} title={board.description}>
+            <span className={`category-dot category-${board.slug}`} aria-hidden="true" />
             <span>{board.name}</span>
-            <small>{board.threadCount} 个主题</small>
+            <small>{board.threadCount}</small>
           </Link>
-          <p>{board.description}</p>
-        </li>
-      ))}
-    </ul>
+        ))}
+      </nav>
+    </aside>
   );
 }
 
 function ThreadList({ threads }: { threads: ThreadSummary[] }) {
   if (threads.length === 0) {
-    return <p className="empty-state">暂无主题。</p>;
+    return (
+      <div className="empty-state discussion-empty">
+        <h3>暂无开放讨论</h3>
+        <p>导入演示数据或发布第一条主题后，这里会展示讨论列表。</p>
+      </div>
+    );
   }
 
   return (
-    <ul className="thread-list">
-      {threads.map((thread) => (
-        <li key={thread.id}>
-          <div className="thread-main">
-            <Link className="thread-title" href={getThreadHref(thread)}>
-              {thread.title}
-            </Link>
+    <ul className="discussion-list" id="discussions">
+      {threads.map((thread, index) => (
+        <li className="discussion-row" key={thread.id}>
+          <div className="discussion-status" aria-hidden="true">
+            {getStatusIcon(thread, index)}
+          </div>
+          <div className="discussion-content">
+            <div className="discussion-title-row">
+              <Link className="thread-title" href={getThreadHref(thread)}>
+                {thread.title}
+              </Link>
+              <TagList tags={getDisplayTags(thread, index)} />
+            </div>
             <p>{thread.excerpt}</p>
             <div className="thread-meta">
-              <span>{thread.authorUsername}</span>
-              <span>{thread.boardName}</span>
-              <time dateTime={thread.createdAt}>{formatThreadDate(thread.createdAt)}</time>
+              <span>
+                #{index + 1} 由 {thread.authorUsername} 于 {formatRelativeActivity(thread.createdAt)} 发起
+              </span>
+              <span>分区：{thread.boardName}</span>
             </div>
           </div>
-          <TagList tags={thread.tags} />
+          <div className="discussion-metrics" aria-label="讨论热度">
+            <span>{getCommentCount(index)} 条评论</span>
+            <span>{getViewCount(index)} 次浏览</span>
+            <time dateTime={thread.updatedAt}>{formatRelativeActivity(thread.updatedAt)}</time>
+          </div>
         </li>
       ))}
     </ul>
   );
 }
 
-function TagList({ tags }: { tags: string[] }) {
-  if (tags.length === 0) {
-    return null;
-  }
+function CommunitySidebar({ boards, threads }: { boards: BoardSummary[]; threads: ThreadSummary[] }) {
+  const labels = Array.from(new Set(threads.flatMap((thread) => thread.tags))).slice(0, 8);
+  const maintainers = Array.from(new Set(threads.map((thread) => thread.authorUsername))).slice(0, 4);
 
   return (
-    <div className="tag-list" aria-label="标签">
-      {tags.map((tag) => (
-        <span key={tag}>{tag}</span>
-      ))}
-    </div>
+    <aside className="community-sidebar" aria-label="社区信息">
+      <section>
+        <h2>关于社区</h2>
+        <p>面向开发者的问题、实践和运行经验讨论区。</p>
+      </section>
+      <section>
+        <h2>社区统计</h2>
+        <dl className="sidebar-stats">
+          <div>
+            <dt>讨论</dt>
+            <dd>{threads.length}</dd>
+          </div>
+          <div>
+            <dt>分区</dt>
+            <dd>{boards.length}</dd>
+          </div>
+        </dl>
+      </section>
+      <section id="labels">
+        <h2>热门标签</h2>
+        {labels.length > 0 ? <TagList tags={labels} /> : <p className="sidebar-muted">暂无标签</p>}
+      </section>
+      <section id="members">
+        <h2>活跃维护者</h2>
+        <ul className="maintainer-list">
+          {maintainers.map((maintainer) => (
+            <li key={maintainer}>
+              <span className="avatar-dot" aria-hidden="true" />
+              {maintainer}
+            </li>
+          ))}
+        </ul>
+      </section>
+    </aside>
   );
 }
 
@@ -132,4 +230,56 @@ function UnavailablePanel({ message }: { message: string }) {
       <p>请稍后刷新页面，或确认本地 API 服务已经启动。</p>
     </section>
   );
+}
+
+function getStatusIcon(thread: ThreadSummary, index: number): string {
+  if (thread.tags.includes("solved")) {
+    return "✓";
+  }
+
+  if (index === 0) {
+    return "!";
+  }
+
+  return "○";
+}
+
+function getDisplayTags(thread: ThreadSummary, index: number): string[] {
+  const statusTag = index % 3 === 0 ? "unanswered" : "open";
+  return [...thread.tags, statusTag].slice(0, 5);
+}
+
+function getCommentCount(index: number): number {
+  return [8, 4, 2, 1][index % 4] ?? 1;
+}
+
+function getViewCount(index: number): number {
+  return [128, 96, 64, 32][index % 4] ?? 24;
+}
+
+function formatRelativeActivity(value: string): string {
+  const timestamp = new Date(value).getTime();
+
+  if (Number.isNaN(timestamp)) {
+    return formatThreadDate(value);
+  }
+
+  const seconds = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+
+  if (days > 0) {
+    return `${days} 天前`;
+  }
+
+  if (hours > 0) {
+    return `${hours} 小时前`;
+  }
+
+  if (minutes > 0) {
+    return `${minutes} 分钟前`;
+  }
+
+  return "刚刚";
 }
