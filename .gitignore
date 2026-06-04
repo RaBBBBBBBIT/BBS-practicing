@@ -1,10 +1,14 @@
-.superpowers/
+# Dependencies
 node_modules/
+
+# Build output and tool caches
 .next/
 dist/
 coverage/
 .turbo/
+*.tsbuildinfo
+
+# Local-only files
 .env
 .DS_Store
 *.log
-*.tsbuildinfo
