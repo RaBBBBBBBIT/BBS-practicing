@@ -11,6 +11,24 @@
 - 数据：PostgreSQL 持久化、Prisma 迁移、seed 初始化、可重复导入演示 SQL。
 - 过程：`docs/superpowers/` 保留设计和实施计划，适合课程作业展示 AI 协作过程。
 
+## 界面示例
+
+### 开发者讨论工作台
+
+![开发者讨论工作台](docs/assets/screenshots/bbs-home.png)
+
+### 主题详情和评论时间线
+
+![主题详情和评论时间线](docs/assets/screenshots/bbs-thread-detail.png)
+
+### 标签列表
+
+![标签列表](docs/assets/screenshots/bbs-tags.png)
+
+### 管理后台仪表盘
+
+![管理后台仪表盘](docs/assets/screenshots/bbs-admin-dashboard.png)
+
 ## 技术栈
 
 | 类型 | 技术 |
