@@ -1,6 +1,8 @@
 import type {
   AuthSessionResponse,
   BoardSummary,
+  CommentSummary,
+  CreateCommentInput,
   CreateThreadInput,
   LoginInput,
   PublicUser,
@@ -28,6 +30,10 @@ interface ThreadResponse {
 
 interface ThreadDetailResponse {
   thread: ThreadDetail;
+}
+
+interface CommentResponse {
+  comment: CommentSummary;
 }
 
 export interface FetchThreadsOptions {
@@ -117,6 +123,21 @@ export async function createThread(
     body: input
   });
   return response.thread;
+}
+
+export async function createComment(
+  threadId: string,
+  input: CreateCommentInput,
+  fetcher: ForumFetch = defaultFetch,
+  baseUrl?: string
+): Promise<CommentSummary> {
+  const response = await requestJson<CommentResponse>(`/threads/${encodeURIComponent(threadId)}/comments`, {
+    fetcher,
+    baseUrl,
+    method: "POST",
+    body: input
+  });
+  return response.comment;
 }
 
 async function requestJson<T>(

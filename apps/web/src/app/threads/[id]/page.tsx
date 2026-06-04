@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import type { ThreadDetail } from "@bbs/shared";
+import type { CommentSummary, ThreadDetail } from "@bbs/shared";
+import { CommentForm } from "../../../components/comment-form";
 import { GlobalTopBar, CommunityTabs } from "../../../components/community-chrome";
 import { TagList } from "../../../components/tag-list";
 import { fetchThread } from "../../../lib/forum-api";
@@ -19,9 +20,9 @@ export default async function ThreadDetailPage({ params }: ThreadDetailPageProps
 
   try {
     const thread = await fetchThread(id);
-    const comments = getDemoComments(thread);
+    const comments = thread.comments;
     const participants = getParticipants(thread, comments);
-    const answerStatus = getAnswerStatus(thread);
+    const answerStatus = getAnswerStatus(thread, comments);
 
     return (
       <DetailChrome>
@@ -43,7 +44,7 @@ export default async function ThreadDetailPage({ params }: ThreadDetailPageProps
                 marker="评论于"
               />
             ))}
-            <CommentComposer />
+            <CommentComposer threadId={thread.id} />
           </section>
           <ThreadSidebar answerStatus={answerStatus} comments={comments} participants={participants} thread={thread} />
         </section>
@@ -154,18 +155,11 @@ function CommentCard({
   );
 }
 
-function CommentComposer() {
+function CommentComposer({ threadId }: { threadId: string }) {
   return (
     <section className="timeline-item comment-composer" aria-label="回复讨论">
       <Avatar username="访客" />
-      <div className="comment-card signin-comment-box">
-        <div className="comment-card-body">
-          <p>登录后参与评论</p>
-          <Link className="secondary-action" href="/login">
-            登录后评论
-          </Link>
-        </div>
-      </div>
+      <CommentForm threadId={threadId} />
     </section>
   );
 }
@@ -177,7 +171,7 @@ function ThreadSidebar({
   thread
 }: {
   answerStatus: AnswerStatus;
-  comments: DemoComment[];
+  comments: CommentSummary[];
   participants: string[];
   thread: ThreadDetail;
 }) {
@@ -221,7 +215,7 @@ function ThreadSidebar({
         <Link className="sidebar-link" href={`/#discussions`}>
           查看 {thread.boardName} 的更多讨论
         </Link>
-        <p>{comments.length} 条演示回复用于呈现讨论流。</p>
+        <p>{comments.length > 0 ? `当前有 ${comments.length} 条真实评论。` : "当前还没有评论。"}</p>
       </section>
     </aside>
   );
@@ -235,59 +229,25 @@ function Avatar({ username, compact = false }: { username: string; compact?: boo
   );
 }
 
-interface DemoComment {
-  id: string;
-  authorUsername: string;
-  createdAt: string;
-  body: string;
-}
-
 interface AnswerStatus {
   label: string;
   className: string;
 }
 
-function getDemoComments(thread: ThreadDetail): DemoComment[] {
-  return [
-    {
-      id: `${thread.id}-reply-1`,
-      authorUsername: "maintainer_demo",
-      createdAt: addHours(thread.createdAt, 2),
-      body: "可以先运行 `docker compose ps` 确认 PostgreSQL、Redis 和 MinIO 都处于 healthy 状态，再启动 API 和 Web 服务。"
-    },
-    {
-      id: `${thread.id}-reply-2`,
-      authorUsername: "ops_demo",
-      createdAt: addHours(thread.createdAt, 5),
-      body: "如果端口被占用，优先检查 5432、6379、9000、9001。开发环境里先把依赖服务稳定下来，后面的排查会轻很多。"
-    }
-  ];
-}
-
-function getParticipants(thread: ThreadDetail, comments: DemoComment[]): string[] {
+function getParticipants(thread: ThreadDetail, comments: CommentSummary[]): string[] {
   return Array.from(new Set([thread.authorUsername, ...comments.map((comment) => comment.authorUsername)]));
 }
 
-function getAnswerStatus(thread: ThreadDetail): AnswerStatus {
+function getAnswerStatus(thread: ThreadDetail, comments: CommentSummary[]): AnswerStatus {
   if (thread.tags.includes("solved")) {
     return { label: "已解决", className: "status-solved" };
   }
 
-  if (thread.tags.includes("answered")) {
+  if (thread.tags.includes("answered") || comments.length > 0) {
     return { label: "已回复", className: "status-solved" };
   }
 
   return { label: "待回复", className: "status-unanswered" };
-}
-
-function addHours(value: string, hours: number): string {
-  const timestamp = new Date(value).getTime();
-
-  if (Number.isNaN(timestamp)) {
-    return value;
-  }
-
-  return new Date(timestamp + hours * 60 * 60 * 1000).toISOString();
 }
 
 function renderInlineMarkdown(value: string) {

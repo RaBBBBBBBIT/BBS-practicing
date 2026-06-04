@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  createComment,
   createThread,
   fetchBoards,
   fetchThread,
@@ -129,6 +130,35 @@ describe("forum API client", () => {
         body: "Created thread body",
         tags: ["nestjs"]
       })
+    });
+  });
+
+  it("creates comments with JSON and browser credentials", async () => {
+    const fetcher = vi.fn().mockResolvedValue(
+      jsonResponse({
+        comment: {
+          id: "comment_1",
+          threadId: "thread_1",
+          authorId: "user_1",
+          authorUsername: "alice_demo",
+          parentId: null,
+          body: "真实评论",
+          createdAt: "2026-06-04T00:00:00.000Z",
+          updatedAt: "2026-06-04T00:00:00.000Z"
+        }
+      })
+    );
+
+    await expect(createComment("thread_1", { body: "真实评论" }, fetcher)).resolves.toMatchObject({
+      id: "comment_1",
+      body: "真实评论"
+    });
+
+    expect(fetcher).toHaveBeenCalledWith("http://localhost:4000/api/threads/thread_1/comments", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ body: "真实评论" })
     });
   });
 
