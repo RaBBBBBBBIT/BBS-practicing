@@ -87,6 +87,23 @@ export const createThreadSchema = z.object({
 
 export type CreateThreadInput = z.infer<typeof createThreadSchema>;
 
+export const createCommentSchema = z.object({
+  body: z.string().min(1).max(5000)
+});
+
+export type CreateCommentInput = z.infer<typeof createCommentSchema>;
+
+export interface CommentSummary {
+  id: string;
+  threadId: string;
+  authorId: string;
+  authorUsername: string;
+  parentId: string | null;
+  body: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ThreadSummary {
   id: string;
   boardId: string;
@@ -104,4 +121,5 @@ export interface ThreadSummary {
 
 export interface ThreadDetail extends Omit<ThreadSummary, "excerpt"> {
   body: string;
+  comments: CommentSummary[];
 }

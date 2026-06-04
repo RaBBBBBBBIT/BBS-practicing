@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   BoardStatus,
+  createCommentSchema,
   createHealthResponse,
   createThreadSchema,
   loginSchema,
@@ -9,7 +10,7 @@ import {
   UserRole,
   UserStatus
 } from "./index";
-import type { ThreadDetail } from "./index";
+import type { CommentSummary, ThreadDetail } from "./index";
 
 describe("shared domain constants", () => {
   it("exposes stable role and status values", () => {
@@ -122,6 +123,17 @@ describe("thread schemas", () => {
   });
 
   it("defines the public thread detail contract", () => {
+    const comment: CommentSummary = {
+      id: "comment_1",
+      threadId: "thread_123",
+      authorId: "user_456",
+      authorUsername: "bob",
+      parentId: null,
+      body: "真实评论",
+      createdAt: "2026-06-03T01:00:00.000Z",
+      updatedAt: "2026-06-03T01:00:00.000Z"
+    };
+
     const detail: ThreadDetail = {
       id: "thread_123",
       boardId: "board_123",
@@ -133,11 +145,19 @@ describe("thread schemas", () => {
       body: "I am trying to understand dependency injection.",
       status: ThreadStatus.Published,
       tags: ["nestjs", "debugging"],
+      comments: [comment],
       createdAt: "2026-06-03T00:00:00.000Z",
       updatedAt: "2026-06-03T00:00:00.000Z"
     };
 
     expect(detail.boardName).toBe("后端开发");
     expect(detail.body).toContain("dependency injection");
+    expect(detail.comments[0]?.body).toBe("真实评论");
+  });
+
+  it("validates comment creation input", () => {
+    expect(createCommentSchema.parse({ body: "这是一条评论" })).toEqual({ body: "这是一条评论" });
+    expect(() => createCommentSchema.parse({ body: "" })).toThrow();
+    expect(() => createCommentSchema.parse({ body: "a".repeat(5001) })).toThrow();
   });
 });
