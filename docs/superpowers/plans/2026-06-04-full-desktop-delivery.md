@@ -118,7 +118,7 @@
 - [x] 扩展 seed 和 SQL 演示数据，覆盖新增业务模型。
 - [x] README 更新完整项目说明、初始化数据库、演示账号、API 摘要和验收流程。
 - [x] 验证演示 SQL 可重复导入。
-- [ ] 提交：`文档：完善完整交付说明`。
+- [x] 提交：`文档：完善完整交付说明`。
 
 ## Task 8: 最终验证和推送
 
@@ -126,5 +126,5 @@
 - [x] 运行 `pnpm db:migrate`、`pnpm db:seed`、导入演示 SQL。
 - [x] 运行 `pnpm test`、`pnpm typecheck`、`pnpm build`、`pnpm lint`、`docker compose config`。
 - [x] 使用浏览器验收前台和后台关键路径。
-- [ ] 确认 `git status --short` 干净。
-- [ ] push 当前分支到远端。
+- [x] 确认 `git status --short` 干净。
+- [x] push 当前分支到远端。
