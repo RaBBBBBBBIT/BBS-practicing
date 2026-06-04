@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { AdminShell, AdminUnavailable } from "../../components/admin-shell";
 import { fetchAdminBoards } from "../../lib/admin-api";
 
@@ -5,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminBoardsPage() {
   try {
-    const boards = await fetchAdminBoards();
+    const boards = await fetchAdminBoards({ cookie: (await cookies()).toString() });
 
     return (
       <AdminShell>
@@ -18,7 +19,7 @@ export default async function AdminBoardsPage() {
             <thead>
               <tr>
                 <th>分区</th>
-                <th>Slug</th>
+                <th>标识</th>
                 <th>状态</th>
                 <th>主题数</th>
               </tr>
@@ -28,7 +29,7 @@ export default async function AdminBoardsPage() {
                 <tr key={board.id}>
                   <td>{board.name}</td>
                   <td>{board.slug}</td>
-                  <td>{board.status}</td>
+                  <td>{formatBoardStatus(board.status)}</td>
                   <td>{board.threadCount}</td>
                 </tr>
               ))}
@@ -40,4 +41,12 @@ export default async function AdminBoardsPage() {
   } catch {
     return <AdminUnavailable />;
   }
+}
+
+function formatBoardStatus(status: string) {
+  const labels: Record<string, string> = {
+    open: "开放",
+    closed: "关闭"
+  };
+  return labels[status] ?? status;
 }

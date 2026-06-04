@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { AdminShell, AdminUnavailable } from "../components/admin-shell";
 import { fetchAdminDashboard } from "../lib/admin-api";
 
@@ -5,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardPage() {
   try {
-    const { dashboard, auditLogs } = await fetchAdminDashboard();
+    const { dashboard, auditLogs } = await fetchAdminDashboard({ cookie: (await cookies()).toString() });
 
     return (
       <AdminShell>

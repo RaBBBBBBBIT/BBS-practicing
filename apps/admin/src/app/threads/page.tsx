@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { AdminShell, AdminUnavailable } from "../../components/admin-shell";
 import { fetchAdminThreads } from "../../lib/admin-api";
 
@@ -5,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminThreadsPage() {
   try {
-    const threads = await fetchAdminThreads();
+    const threads = await fetchAdminThreads({ cookie: (await cookies()).toString() });
 
     return (
       <AdminShell>
@@ -28,7 +29,7 @@ export default async function AdminThreadsPage() {
                 <tr key={thread.id}>
                   <td>{thread.title}</td>
                   <td>{thread.boardName}</td>
-                  <td>{thread.status}{thread.isLocked ? " · locked" : ""}{thread.isPinned ? " · pinned" : ""}</td>
+                  <td>{formatThreadState(thread.status, thread.isLocked, thread.isPinned)}</td>
                   <td>{thread.commentCount} 评论 · {thread.reactionCount} 点赞</td>
                 </tr>
               ))}
@@ -40,4 +41,23 @@ export default async function AdminThreadsPage() {
   } catch {
     return <AdminUnavailable />;
   }
+}
+
+function formatThreadState(status: string, isLocked: boolean, isPinned: boolean) {
+  const labels: Record<string, string> = {
+    draft: "草稿",
+    published: "已发布",
+    hidden: "已隐藏",
+    deleted: "已删除"
+  };
+  const states = [labels[status] ?? status];
+
+  if (isLocked) {
+    states.push("已锁定");
+  }
+  if (isPinned) {
+    states.push("已置顶");
+  }
+
+  return states.join(" · ");
 }

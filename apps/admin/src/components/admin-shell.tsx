@@ -16,7 +16,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
       <aside className="admin-sidebar" aria-label="后台导航">
         <div className="admin-brand">
           <span>B</span>
-          <strong>BBS Admin</strong>
+          <strong>BBS 管理后台</strong>
         </div>
         <nav>
           {navItems.map((item) => (

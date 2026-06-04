@@ -15,7 +15,7 @@ export default async function NewThreadPage() {
           <Link href="/login">登录</Link>
         </nav>
         <section className="posting-layout">
-          <p className="eyebrow">New Thread</p>
+          <p className="eyebrow">新讨论</p>
           <h1>发布主题</h1>
           <p>选择分区，写下问题、经验或实践记录。</p>
           <ThreadForm boards={boards} />

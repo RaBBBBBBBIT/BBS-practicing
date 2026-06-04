@@ -91,6 +91,10 @@ export interface FetchThreadsOptions {
 }
 
 export function resolveApiBaseUrl(value = process.env.NEXT_PUBLIC_API_BASE_URL ?? DEFAULT_API_BASE_URL): string {
+  if (!process.env.NEXT_PUBLIC_API_BASE_URL && value === DEFAULT_API_BASE_URL && typeof window !== "undefined") {
+    return `${window.location.protocol}//${window.location.hostname}:4000/api`;
+  }
+
   return value.replace(/\/+$/, "");
 }
 
@@ -274,6 +278,11 @@ export async function fetchNotifications(fetcher: ForumFetch = defaultFetch, bas
   return response.notifications;
 }
 
+export async function fetchNotificationsWithCookie(cookie: string, fetcher: ForumFetch = defaultFetch, baseUrl?: string): Promise<NotificationSummary[]> {
+  const response = await requestJson<NotificationsResponse>("/notifications", { fetcher, baseUrl, cookie });
+  return response.notifications;
+}
+
 export async function markNotificationRead(id: string, fetcher: ForumFetch = defaultFetch, baseUrl?: string): Promise<NotificationSummary> {
   const response = await requestJson<NotificationResponse>(`/notifications/${encodeURIComponent(id)}/read`, {
     fetcher,
@@ -297,6 +306,11 @@ export async function fetchConversations(fetcher: ForumFetch = defaultFetch, bas
   return response.conversations;
 }
 
+export async function fetchConversationsWithCookie(cookie: string, fetcher: ForumFetch = defaultFetch, baseUrl?: string): Promise<ConversationSummary[]> {
+  const response = await requestJson<ConversationsResponse>("/messages/conversations", { fetcher, baseUrl, cookie });
+  return response.conversations;
+}
+
 export async function fetchConversationMessages(
   conversationId: string,
   fetcher: ForumFetch = defaultFetch,
@@ -305,6 +319,20 @@ export async function fetchConversationMessages(
   const response = await requestJson<MessagesResponse>(`/messages/conversations/${encodeURIComponent(conversationId)}`, {
     fetcher,
     baseUrl
+  });
+  return response.messages;
+}
+
+export async function fetchConversationMessagesWithCookie(
+  conversationId: string,
+  cookie: string,
+  fetcher: ForumFetch = defaultFetch,
+  baseUrl?: string
+): Promise<MessageSummary[]> {
+  const response = await requestJson<MessagesResponse>(`/messages/conversations/${encodeURIComponent(conversationId)}`, {
+    fetcher,
+    baseUrl,
+    cookie
   });
   return response.messages;
 }
@@ -344,6 +372,7 @@ async function requestJson<T>(
     baseUrl?: string | undefined;
     method?: "DELETE" | "GET" | "PATCH" | "POST" | undefined;
     body?: unknown;
+    cookie?: string | undefined;
   }
 ): Promise<T> {
   const init: RequestInit = {
@@ -357,6 +386,13 @@ async function requestJson<T>(
   if (options.body !== undefined) {
     init.headers = { "content-type": "application/json" };
     init.body = JSON.stringify(options.body);
+  }
+
+  if (options.cookie) {
+    init.headers = {
+      ...(init.headers as Record<string, string> | undefined),
+      cookie: options.cookie
+    };
   }
 
   const response = await options.fetcher(`${resolveApiBaseUrl(options.baseUrl)}${path}`, init);

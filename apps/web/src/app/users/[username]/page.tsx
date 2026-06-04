@@ -26,7 +26,7 @@ export default async function UserPage({ params }: UserPageProps) {
               <div>
                 <h1>{user.username}</h1>
                 <p>
-                  {user.role} · {user.status} · 加入于 {formatThreadDate(user.createdAt)}
+                  {formatUserRole(user.role)} · {formatUserStatus(user.status)} · 加入于 {formatThreadDate(user.createdAt)}
                 </p>
               </div>
               <Link className="secondary-action" href="/messages">
@@ -76,4 +76,23 @@ export default async function UserPage({ params }: UserPageProps) {
       </>
     );
   }
+}
+
+function formatUserRole(role: string) {
+  const labels: Record<string, string> = {
+    admin: "管理员",
+    moderator: "版主",
+    user: "普通用户",
+    guest: "访客"
+  };
+  return labels[role] ?? role;
+}
+
+function formatUserStatus(status: string) {
+  const labels: Record<string, string> = {
+    active: "正常",
+    muted: "禁言",
+    banned: "封禁"
+  };
+  return labels[status] ?? status;
 }

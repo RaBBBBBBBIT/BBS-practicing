@@ -1,6 +1,7 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { GlobalTopBar } from "../../../components/community-chrome";
-import { fetchConversationMessages } from "../../../lib/forum-api";
+import { fetchConversationMessagesWithCookie } from "../../../lib/forum-api";
 import { formatThreadDate } from "../../../lib/forum-view-model";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +14,7 @@ export default async function MessageThreadPage({ params }: MessageThreadPagePro
   const { conversationId } = await params;
 
   try {
-    const messages = await fetchConversationMessages(conversationId);
+    const messages = await fetchConversationMessagesWithCookie(conversationId, (await cookies()).toString());
 
     return (
       <>

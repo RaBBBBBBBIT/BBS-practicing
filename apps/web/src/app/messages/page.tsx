@@ -1,13 +1,14 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { GlobalTopBar, CommunityTabs } from "../../components/community-chrome";
-import { fetchConversations } from "../../lib/forum-api";
+import { fetchConversationsWithCookie } from "../../lib/forum-api";
 import { formatThreadDate } from "../../lib/forum-view-model";
 
 export const dynamic = "force-dynamic";
 
 export default async function MessagesPage() {
   try {
-    const conversations = await fetchConversations();
+    const conversations = await fetchConversationsWithCookie((await cookies()).toString());
 
     return (
       <>

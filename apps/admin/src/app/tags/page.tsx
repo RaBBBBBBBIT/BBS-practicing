@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { AdminShell, AdminUnavailable } from "../../components/admin-shell";
 import { fetchAdminTags } from "../../lib/admin-api";
 
@@ -5,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminTagsPage() {
   try {
-    const tags = await fetchAdminTags();
+    const tags = await fetchAdminTags({ cookie: (await cookies()).toString() });
 
     return (
       <AdminShell>
@@ -28,7 +29,7 @@ export default async function AdminTagsPage() {
                 <tr key={tag.id}>
                   <td>{tag.name}</td>
                   <td>{tag.description}</td>
-                  <td>{tag.status}</td>
+                  <td>{formatTagStatus(tag.status)}</td>
                   <td>{tag.threadCount}</td>
                 </tr>
               ))}
@@ -40,4 +41,12 @@ export default async function AdminTagsPage() {
   } catch {
     return <AdminUnavailable />;
   }
+}
+
+function formatTagStatus(status: string) {
+  const labels: Record<string, string> = {
+    active: "启用",
+    disabled: "停用"
+  };
+  return labels[status] ?? status;
 }

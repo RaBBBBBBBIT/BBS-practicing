@@ -1,12 +1,13 @@
+import { cookies } from "next/headers";
 import { GlobalTopBar, CommunityTabs } from "../../components/community-chrome";
-import { fetchNotifications } from "../../lib/forum-api";
+import { fetchNotificationsWithCookie } from "../../lib/forum-api";
 import { formatThreadDate } from "../../lib/forum-view-model";
 
 export const dynamic = "force-dynamic";
 
 export default async function NotificationsPage() {
   try {
-    const notifications = await fetchNotifications();
+    const notifications = await fetchNotificationsWithCookie((await cookies()).toString());
 
     return (
       <>

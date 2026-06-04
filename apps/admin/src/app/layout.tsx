@@ -3,8 +3,8 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "BBS Admin",
-  description: "Technical BBS moderation and administration console"
+  title: "BBS 管理后台",
+  description: "技术社区内容审核和管理控制台"
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
